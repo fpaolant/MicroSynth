@@ -1,5 +1,5 @@
 services:
-  mongodb:
+  ms-mongodb:
     image: mongo:latest
     environment:
       MONGO_INITDB_DATABASE: microsynth
@@ -10,6 +10,28 @@ services:
     volumes:
       - mongo_data:/data/db
       - ./init-mongo:/docker-entrypoint-initdb.d
+
+  ms-backend:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: ms-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      ms-mongodb:
+        condition: service_healthy
+
+  ms-client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    image: ms-client
+    ports:
+      - "80:80"
+    depends_on:
+      ms-backend:
+        condition: service_started
 
 volumes:
   mongo_data:
