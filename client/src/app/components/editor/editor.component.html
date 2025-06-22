@@ -1,0 +1,44 @@
+<p-toolbar>
+    <ng-template #start>
+        <p-button icon="pi pi-plus" class="mr-2" text severity="secondary"  (onClick)="addNode()"
+        pTooltip="add node" tooltipPosition="top"/>
+        <p-button icon="pi pi-times" class="mr-2" text severity="secondary" (onClick)="clear()" [disabled]="false"
+        pTooltip="clear" tooltipPosition="top"/>
+        <p-button icon="pi pi-th-large" text severity="secondary" (onClick)="reorder()" 
+        pTooltip="arrange nodes and connections" tooltipPosition="top"/>
+        <!-- <p-dropdown 
+            [options]="shapes"
+            placeholder="Select a shape"
+            [autoDisplayFirst]="false"
+            [(ngModel)]="selectedShape"
+            (onChange)="onShapeChange($event)"
+            [style]="{ width: '200px' }">
+            <ng-template let-shape pTemplate="item">
+                {{ shape }}
+            </ng-template>
+        </p-dropdown> -->
+    </ng-template>
+
+    <ng-template #center>
+        {{title}}
+    </ng-template>
+
+    <ng-template #end>
+        <p-button class="mr-2" icon="pi pi-upload" severity="secondary" (onClick)="download()" 
+        pTooltip="export in JSON" tooltipPosition="top"/>
+        <p-button class="mr-2" icon="pi pi-download" severity="secondary" (onClick)="onImport()" 
+        pTooltip="import from json" tooltipPosition="top"/>
+        <p-button label="Save" (onClick)="save()" severity="primary" [disabled]="!diagramTouched"/>
+    </ng-template>
+</p-toolbar>
+<div #editor class="editor-container"></div>
+<app-upload-file-dialog
+  [(visible)]="uploadFileVisible"
+  [multiple]="false"
+  [closeOnfinish]="true"
+  [fileMimeType]="'application/json'"
+  [headerTitle]="'Upload JSON'"
+  [description]="'Upload the JSON file to import'"
+  (fileParsed)="onFileParsed($event)"
+  (onCancel)="onCancelUpload()"
+></app-upload-file-dialog>

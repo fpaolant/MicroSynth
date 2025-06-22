@@ -1,0 +1,34 @@
+<p-breadcrumb class="max-w-full" [model]="items()">
+  <ng-template #item let-item>
+    <ng-container *ngIf="item.route; else elseBlock">
+      <a [routerLink]="item.route" class="p-breadcrumb-item-link">
+        <span [ngClass]="[item.icon ? item.icon : '', 'text-color']"></span>
+        <span class="text-primary font-semibold">{{ item.label }}</span>
+      </a>
+    </ng-container>
+    <ng-template #elseBlock>
+      <a [href]="item.url">
+        <span class="text-color">{{ item.label }}</span>
+      </a>
+    </ng-template>
+  </ng-template>
+</p-breadcrumb>
+
+<div class="card">
+  <p-splitter [panelSizes]="[80, 20]" [minSizes]="[80, 20]">
+    <ng-template #panel>
+      <div class="h-full w-full p-6">
+        <app-editor
+          #editor
+          [title]="diagram?.name"
+          [diagram]="diagramDataDraft"
+          (editorAreaCleared)="onEditorAreaCleared($event)"
+          (onSave)="onSave($event)"
+        ></app-editor>
+      </div>
+    </ng-template>
+    <ng-template #panel>
+      <div class="flex items-center justify-center h-full">Panel 2</div>
+    </ng-template>
+  </p-splitter>
+</div>

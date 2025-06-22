@@ -1,0 +1,100 @@
+<div class="card">
+    <div class="font-semibold text-xl">Your Projects</div>
+    <p-dataview [value]="projects()" [layout]="'grid'">
+        <ng-template #header>
+            <div class="flex justify-end">
+                <p-button *ngIf="(projects?.length ?? 0) > 0 || false" icon="pi pi-plus" text raised rounded (click)="openProjectDialog()" />
+            </div>
+        </ng-template>
+
+        <ng-template #emptymessage>
+            <div class="text-center text-surface-500 dark:text-surface-400 py-4">
+            <div class="mb-8">Non sono presenti progetti.</div>   
+            <p-button label="Aggiungine uno" icon="pi pi-plus" variant="text" severity="success" (click)="openProjectDialog()" />
+            </div>
+        </ng-template>
+
+        <ng-template #grid let-items>
+            <div class="grid grid-cols-12 gap-4">
+                <div *ngFor="let item of items; let i = index" class="col-span-6 sm:col-span-4 lg:col-span-3 p-2">
+                    <div  class="p-6 border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded flex flex-col 
+                    transition-all duration-200 hover:shadow-lg hover:border-primary-500 cursor-pointer h-full animate-once animate-duration-500 animate-zoomin" (click)="selectProject(item.id)">
+                        <div class="flex flex-col absolute">
+                            <div class="flex gap-2">
+                                <p-button *ngIf="item.diagrams.length===0" icon="pi pi-times" size="small" [rounded]="true" [text]="true" severity="danger" (click)="deleteProject(item); $event.stopPropagation()" pTooltip="Delete" />
+                            </div>
+                        </div>
+                        <div class="flex justify-center rounded">
+                            <div class="relative mx-auto">
+                                <div class="text-center ">
+                                    <app-logo width="30%"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex flex-row justify-between items-start gap-2">
+                                <div>
+                                    <span class="font-medium text-surface-500 dark:text-surface-400 text-sm">{{ item.category }} cat</span>
+                                    <div class="text-2xl font-medium mt-1">{{ item.name }}</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-6 mt-6">
+                                <span class="text-lg font-medium text-surface-500 dark:text-surface-400">{{ item.diagrams.length }} diagrams</span>
+                                <!-- <div class="flex gap-2">
+                                    <p-button icon="pi pi-check" label="Select" size="small" class="flex-auto whitespace-nowrap" styleClass="w-full" pTooltip="Select proect" (click)="selectProject(item.id)"></p-button>
+                                    <p-button *ngIf="item.diagrams.length===0" icon="pi pi-times" size="small" [rounded]="true" [text]="true" severity="danger" (click)="deleteProject(item); $event.stopPropagation()" pTooltip="Delete" />
+                                </div> -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </ng-template>
+    </p-dataview>
+
+    <p-dataview [value]="projects()" [layout]="'grid'" *ngIf="loading()">
+        <ng-template #grid let-items>
+            <div class="grid grid-cols-12 gap-4">
+                <div
+                    *ngFor="let i of counterArray(6); let first = first"
+                    class="col-span-12 sm:col-span-6 xl:col-span-2 p-2"
+                >
+                    <div
+                        class="p-6 border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded"
+                    >
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p-skeleton width="6rem" height="2rem" />
+                            <p-skeleton width="3rem" height="1rem" />
+                        </div>
+                        <div class="flex flex-col items-center gap-4 py-8">
+                            <p-skeleton height="10rem" class="w-3/4" styleClass="w-3/4" />
+                            <p-skeleton width="8rem" height="2rem" />
+                            <p-skeleton width="6rem" height="1rem" />
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <p-skeleton width="4rem" height="2rem" />
+                            <p-skeleton width="6rem" height="1rem" shape="circle" size="3rem" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </ng-template>
+    </p-dataview>
+    
+</div>
+
+<p-confirmdialog [style]="{ width: '450px' }" />
+
+<p-dialog header="New Project" [modal]="true" [(visible)]="newDialogVisible.value" [style]="{ width: '25rem' }">
+    <form [formGroup]="projectForm">
+        <span class="p-text-secondary block mb-8">Insert the name.</span>
+        <div class="flex items-center gap-4 mb-8">
+            <input pInputText id="name" class="flex-auto" autocomplete="off" formControlName="name" />
+        </div>
+        <div class="flex justify-end gap-2">
+            <p-button label="Cancel" severity="secondary" (click)="newDialogVisible.set(false)" />
+            <p-button label="Save" severity="secondary" (click)="saveProject()" />
+            <p-button label="Save & select" (click)="saveProject(true)" />
+        </div>
+    </form>
+</p-dialog>

@@ -1,0 +1,46 @@
+svg {
+  overflow: visible;
+  position: absolute;
+  pointer-events: none;
+
+  path {
+    fill: none;
+    stroke-width: 4px;
+    stroke: var(--primary-color);
+    pointer-events: auto;
+    z-index: 1;
+    filter: drop-shadow(0 0 0 red);
+
+    &.selected {
+      stroke: white;
+      box-shadow: 0 0 10px var(--primary-color);
+    }
+  }
+}
+
+.hover-path {
+  fill: none;
+  stroke-width: 15px;
+  pointer-events: auto;
+  stroke: transparent;
+}
+
+
+
+
+.label {
+  position: absolute;
+  //transform: translate(-50%, -50%);
+  font-size: 0.8em;
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 3px 6px;
+}
+
+.actions {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+

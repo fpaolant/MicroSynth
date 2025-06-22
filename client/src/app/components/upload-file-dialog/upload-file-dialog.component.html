@@ -1,0 +1,22 @@
+<p-dialog
+  [header]="headerTitle"
+  [modal]="true"
+  [(visible)]="visible"
+  [style]="{ width: '35rem' }"
+  (onHide)="closeDialog()"
+>
+  <span class="p-text-secondary block mb-8">{{ description }}</span>
+
+  <p-fileupload
+    name="file[]"
+    [multiple]="multiple"
+    [accept]="fileMimeType"
+    [maxFileSize]="maxFileSize"
+    customUpload="true"
+    (onSelect)="onFileSelect($event)"
+  >
+    <ng-template #empty>
+      <div class="drag-area">Trascina qui i file o clicca per selezionarli.</div>
+    </ng-template>
+  </p-fileupload>
+</p-dialog>

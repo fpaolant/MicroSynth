@@ -1,0 +1,137 @@
+<svg
+  data-testid="connection"
+  (pointerdown)="$event.stopPropagation()"
+  (click)="data.click(data)"
+>
+  <path class="hover-path" [attr.d]="path" />
+  <path #pathREf [attr.d]="path" [class]="{ selected: data.selected }" />
+</svg>
+<p-tag
+  *ngIf="data.label != ''"
+  class="label"
+  severity="contrast"
+  (pointerdown)="$event.stopPropagation()"
+  (click)="data.click(data)"
+  [value]="data.label"
+  [style.left.px]="point.x"
+  [style.top.px]="point.y"
+/>
+
+<div
+  class="flex flex-row actions"
+  *ngIf="point && data.selected"
+  [style.left.px]="point.x"
+  [style.top.px]="point.y + 80"
+>
+  <p-button
+    (pointerdown)="$event.stopImmediatePropagation()"
+    (click)="popoverEditConn.toggle($event)"
+    icon="pi pi-pencil"
+    [rounded]="true"
+    [text]="true"
+    size="small"
+    severity="secondary"
+  />
+  <p-button
+    (pointerdown)="$event.stopImmediatePropagation()"
+    (click)="remove()"
+    icon="pi pi-times"
+    [rounded]="true"
+    [text]="true"
+    size="small"
+    severity="danger"
+  />
+  <p-button
+    (pointerdown)="$event.stopImmediatePropagation()"
+    (click)="showPayloadDialog()"
+    icon="pi pi-code"
+    [rounded]="true"
+    [text]="true"
+    size="small"
+    severity="contrast"
+    pTooltip="edit payload"
+    tooltipPosition="bottom"
+  />
+</div>
+
+<p-popover #popoverEditConn>
+  <div class="flex flex-col">
+    <div>
+      <span class="font-medium text-surface-900 dark:text-surface-0 block mb-2"
+        >Name</span
+      >
+      <p-inputgroup>
+        <input pInputText [(ngModel)]="labelDraft" class="w-[25rem]" />
+        <p-inputgroup-addon>
+          <button
+            pButton
+            icon="pi pi-save"
+            (click)="data.label = labelDraft"
+          ></button>
+        </p-inputgroup-addon>
+      </p-inputgroup>
+      <span
+        class="font-medium text-surface-900 dark:text-surface-0 block mb-2 mt-6"
+        >Weight</span
+      >
+      <p-inputnumber
+        [(ngModel)]="data.weight"
+        mode="decimal"
+        [showButtons]="true"
+        inputId="minmax-buttons"
+        [min]="0"
+        [max]="100"
+      />
+    </div>
+  </div>
+</p-popover>
+
+<p-dialog
+  appendTo="body"
+  header="Header"
+  [modal]="true"
+  [(visible)]="payloadDialogVisible"
+  [style]="{ width: '80rem', height: '50vh' }"
+  [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }"
+  [maximizable]="true"
+>
+  <ng-template #header>
+    <div class="inline-flex items-center justify-center gap-2">
+      <span class="font-bold whitespace-nowrap">Connection Payload</span>
+    </div>
+  </ng-template>
+  <span class="text-surface-500 dark:text-surface-400 block mb-8"
+    >Select the language and update payload code.</span
+  >
+
+  <div class="flex-1 h-[calc(100%-6rem)]">
+    <app-code-editor
+      class="h-full w-full block"
+      [code]="payloadDraft"
+      [language]="payloadLanguageDraft"
+      (codeChange)="payloadDraft = $event"
+      (languageChange)="payloadLanguageDraft = $event"
+      (hasErrorsChange)="hasPayloadCodeErrors = $event"
+    ></app-code-editor>
+  </div>
+
+  <ng-template #footer>
+    <div *ngIf="hasPayloadCodeErrors" class="text-red-600 text-sm mt-2">
+      Il codice contiene errori e non può essere salvato.
+    </div>
+    <p-button
+      label="Cancel"
+      [text]="true"
+      severity="secondary"
+      (click)="payloadDialogVisible = false"
+    />
+
+    <p-button
+      label="Save"
+      [outlined]="true"
+      [disabled]="hasPayloadCodeErrors"
+      severity="primary"
+      (click)="savePayload()"
+    />
+  </ng-template>
+</p-dialog>
