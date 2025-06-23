@@ -94,8 +94,8 @@ export class Signup implements OnInit {
         this.submitted = false;
         this.showMessage(
           "success",
-          "Registrazione effettuata! Verrai reinderizzato alla pagina di login a breve",
-          "Registrazione effettuata"
+          "Signup completed! You will redirect soon",
+          "Signup completed"
         );
         setTimeout(() => {
           this.router.navigate(["/auth/login"]);
@@ -103,8 +103,8 @@ export class Signup implements OnInit {
         this.signupForm.enable();
       },
       error: (err) => {
-        this.showMessage("error", "Errore durante la registrazione", "Errore");
-        console.log(err);
+        this.showMessage("error", "Error during signup", "Error");
+        console.log("Signup error", err);
         this.submitted = false;
         this.signupForm.enable();
       },

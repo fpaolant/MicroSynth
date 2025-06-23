@@ -83,11 +83,11 @@ export class Login implements OnInit {
         const credentials = { username: this.username, password: this.password };
         this.authService.login(credentials).subscribe(
             (response) => {
-                this.showMessage('success', 'Login effettuato con successo', 'Successo');
+                this.showMessage('success', 'Login succesful', 'Success');
                 this.router.navigate([this.returnUrl]);
             },
             (error) => {
-                this.showMessage('error', 'Errore durante il login', 'Errore');
+                this.showMessage('error', 'Error during login', 'Error');
             }
         );      
 

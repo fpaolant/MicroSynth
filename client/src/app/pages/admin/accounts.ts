@@ -119,7 +119,7 @@ export class AccountsPage implements OnInit {
         this.totalAccounts = res.totalElements;
       },
       error: err => {
-        console.error('Errore caricamento dati:', err);
+        console.error('Error fetching accounts:', err);
       },
       complete: () => {
         this.loadingAccounts.set(false);
@@ -164,11 +164,11 @@ export class AccountsPage implements OnInit {
       accept: () => {
         this.accountService.deleteAccount(account.id).subscribe({
           next: (response) => {
-            this.messageService.add({ severity: 'success', summary: 'Successo', detail: 'Account eliminato.', life: 3000 });
+            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Account deleted.', life: 3000 });
             this.refreshTable();
           },
           error: (error) => {
-            this.messageService.add({ severity: 'error', summary: 'Errore', detail: 'Errore durante l\'eliminazione dell\'account. error: ' + error , life: 3000 });
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error during account deletion. error: ' + error , life: 3000 });
           }
         });
       }
@@ -188,22 +188,22 @@ export class AccountsPage implements OnInit {
         // Update existing account
         this.accountService.updateAccount(this.account).subscribe({
           next: (response) => {
-            this.messageService.add({ severity: 'success', summary: 'Successo', detail: 'Account aggiornato.', life: 3000 });
+            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Account updated.', life: 3000 });
             this.refreshTable();
           },
           error: (error) => {
-            this.messageService.add({ severity: 'error', summary: 'Errore', detail: 'Errore durante l\'aggiornamento dell\'account. error: ' + error , life: 3000 });
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error during account updating. error: ' + error , life: 3000 });
           }
         });
       } else {
         // Create new account
         this.accountService.createAccount(this.account).subscribe({
           next: (response) => {
-            this.messageService.add({ severity: 'success', summary: 'Successo', detail: 'Account creato.', life: 3000 });
+            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Account created.', life: 3000 });
             this.refreshTable();
           },
           error: (error) => {
-            this.messageService.add({ severity: 'error', summary: 'Errore', detail: 'Errore durante la creazione dell\'account. error: ' + error , life: 3000 });
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error during account creation. error: ' + error , life: 3000 });
           }
         });
       }
@@ -222,29 +222,29 @@ export class AccountsPage implements OnInit {
 
     forkJoin(observables).subscribe({
       next: () => {
-        this.messageService.add({ severity: 'success', summary: 'Successo', detail: 'N. '+observables.length+' accounts eliminati.', life: 3000 });
+        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'N. '+observables.length+' accounts deleted.', life: 3000 });
         this.refreshTable();
       },
       error: (error) => {
-        this.messageService.add({ severity: 'error', summary: 'Errore', detail: 'Errore durante l\'eliminazione degli account. error: ' + error , life: 3000 });
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error during account deletion. error: ' + error , life: 3000 });
       }
     });
   }
 
   promoteAccount(account: Account) {
     this.confirmationService.confirm({
-      message: 'Sei sicuro di voler promuovere l\'utente "' + account.username + '" ad admin?',
-      header: 'Conferma promozione',
+      message: 'Are you sure to promote user "' + account.username + '" to admin?',
+      header: 'Confirm promotion',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.accountService.promoteAccount(account.id).subscribe({
           next: (response) => {
             
-            this.messageService.add({ severity: 'success', summary: 'Successo', detail: 'Account Promosso.', life: 3000 });
+            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Account promoted.', life: 3000 });
             this.refreshTable();
           },
           error: (error) => {
-            this.messageService.add({ severity: 'error', summary: 'Errore', detail: 'Errore durante la promozione dell\'account. error: ' + error , life: 3000 });
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error during account promoting. error: ' + error , life: 3000 });
           }
         });
       }
@@ -253,17 +253,17 @@ export class AccountsPage implements OnInit {
 
   demoteAccount(account: Account) {
     this.confirmationService.confirm({
-      message: 'Sei sicuro di voler impostare l\'utente "' + account.username + '" come user?',
-      header: 'Conferma',
+      message: 'Are you sure to set user "' + account.username + '" as user?',
+      header: 'Confirm',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.accountService.demoteAccount(account.id).subscribe({
           next: (response) => {
-            this.messageService.add({ severity: 'success', summary: 'Successo', detail: 'Account aggiornato.', life: 3000 });
+            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Account updated.', life: 3000 });
             this.refreshTable();
           },
           error: (error) => {
-            this.messageService.add({ severity: 'error', summary: 'Errore', detail: 'Errore durante la degradazione dell\'account. error: ' + error , life: 3000 });
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error during account updating. error: ' + error , life: 3000 });
           }
         });
       }

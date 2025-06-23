@@ -105,11 +105,11 @@ export class DiagramPage implements OnInit, AfterViewInit {
         this.loadDiagram();
       },
       error: (error) => {
-        console.error("Errore nel caricamento del progetto:", error);
+        console.error("Error fetching project:", error);
         this.messageService.add({
           severity: "error",
-          summary: "Errore",
-          detail: "Impossibile caricare il diagramma",
+          summary: "Error",
+          detail: "Cannot loading diagram",
         });
       },
     });

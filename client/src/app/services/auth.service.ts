@@ -125,7 +125,7 @@ export class AuthService {
     try {
       return jwtDecode(token);
     } catch (error) {
-      console.error('Errore nella decodifica del token JWT', error);
+      console.error('Error decoding JWT token', error);
       return null;
     }
   }
