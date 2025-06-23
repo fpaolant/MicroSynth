@@ -9,6 +9,7 @@ svg {
     stroke: var(--primary-color);
     pointer-events: auto;
     z-index: 1;
+    cursor: pointer;
 
     &.selected {
       stroke: var(--p-button-warn-background);
