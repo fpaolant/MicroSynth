@@ -90,24 +90,27 @@ export class ProjectService {
   deleteProject(id: string): Observable<string> {
     const headers = new HttpHeaders({ 
       'Content-Type': 'application/json',
-      'Use-Auth': 'true' // tells interceptor to include bearer token
+      'Use-Auth': 'true'
     });
-    return this.http.delete(
-      `${this.baseUrl}/${id}`,
-      {
-        headers: headers,
-        observe: 'body',
-        responseType: 'text'
-      }
+  
+    return this.http.delete(`${this.baseUrl}/${id}`, {
+      headers,
+      observe: 'body',
+      responseType: 'text'
+    }).pipe(
+      tap(() => this.removeFromRecentProjects(id))
     );
   }
 
   updateProject(project: Project): Observable<BaseDocument> {
     const headers = new HttpHeaders({ 
       'Content-Type': 'application/json',
-      'Use-Auth': 'true' // tells interceptor to include bearer token
+      'Use-Auth': 'true'
     });
-    return this.http.put<BaseDocument>(`${this.baseUrl}/${project.id}`, project, {headers});
+  
+    return this.http.put<BaseDocument>(`${this.baseUrl}/${project.id}`, project, { headers }).pipe(
+      tap(() => this.saveToRecentProjects(project))
+    );
   }
 
   createProject(project: Project): Observable<BaseDocument> {
@@ -137,5 +140,12 @@ export class ProjectService {
     localStorage.setItem(this.recentProjectsKey, JSON.stringify(recentProjects));
   }
 
+  private removeFromRecentProjects(projectId: string): void {
+    const stored = localStorage.getItem(this.recentProjectsKey);
+    let recentProjects: any[] = stored ? JSON.parse(stored) : [];
+  
+    recentProjects = recentProjects.filter(p => p.id !== projectId);
+    localStorage.setItem(this.recentProjectsKey, JSON.stringify(recentProjects));
+  }
  
 }
