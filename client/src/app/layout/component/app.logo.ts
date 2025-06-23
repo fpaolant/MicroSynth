@@ -22,7 +22,7 @@ import { Component, Input } from '@angular/core';
 })
 export class AppLogo {
 
-    @Input() width: string = 'auto';
-    @Input() height: string = 'auto';
+    @Input() width: string = '100%';
+    @Input() height: string = '100%';
 
 }
