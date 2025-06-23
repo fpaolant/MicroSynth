@@ -65,17 +65,11 @@ export class AppMenu {
         if(this.authService.isAdmin()){
             this.modelAdmin = [
                 {
-                    label: 'Amministratore',
+                    label: 'Admin',
                     items: [
-                        { label: 'Gestisci Account', icon: 'pi pi-fw pi-users', routerLink: ['/pages/admin/accounts'] }
+                        { label: 'Accounts', icon: 'pi pi-fw pi-users', routerLink: ['/pages/admin/accounts'] }
                     ]
-                },
-                /*{
-                    label: 'API',
-                    items: [
-                        { label: 'API docs', icon: 'pi pi-fw pi-link', routerLink: ['/pages/apidoc'] }
-                    ]
-                },*/
+                }
             ];
         }
 
@@ -84,7 +78,7 @@ export class AppMenu {
                 {
                     label: '',
                     items: [
-                        { label: 'I miei progetti', icon: 'pi pi-fw pi-images', routerLink: ['/pages/projects'] }
+                        { label: 'My projects', icon: 'pi pi-fw pi-images', routerLink: ['/pages/projects'] }
                     ]
                 },
             ];
@@ -94,7 +88,7 @@ export class AppMenu {
             if(recent.length > 0) {
                 this.recentProjects = [
                     {
-                    label: 'Progetti recenti',
+                    label: 'Recent projects',
                     items: recent.map((project) => ({
                         label: project.name,
                         icon: 'pi pi-fw pi-clock',

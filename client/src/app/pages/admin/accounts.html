@@ -16,7 +16,7 @@
 
 <p-toolbar styleClass="mb-6 mt-6">
     <ng-template #start>
-        <p-button label="Nuovo" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="createNew()" />
+        <p-button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="createNew()" />
         <p-button severity="secondary" label="Delete" icon="pi pi-trash" outlined (onClick)="deleteSelectedAccounts()" [disabled]="!selectedAccounts || !selectedAccounts.length" />
     </ng-template>
 
@@ -38,7 +38,7 @@
     [(selection)]="selectedAccounts"
     [rowHover]="true"
     dataKey="id"
-    currentPageReportTemplate="Ti sto mostrando da {first} a {last} di {totalRecords} accounts"
+    currentPageReportTemplate="Showing results from {first} to {last} of {totalRecords} accounts"
     [showCurrentPageReport]="true"
     [rowsPerPageOptions]="[5, 10, 15, 20]"
     (rowsChange)="onRowsChange($event)"
@@ -51,10 +51,10 @@
 >
     <ng-template #caption>
         <div class="flex items-center justify-between">
-            <h5 class="m-0">Gestisci account</h5>
+            <h5 class="m-0">Accounts</h5>
             <p-iconfield>
                 <p-inputicon styleClass="pi pi-search" />
-                <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Cerca..." />
+                <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search..." />
             </p-iconfield>
         </div>
     </ng-template>
@@ -69,11 +69,11 @@
                 <p-sortIcon field="title" />
             </th>
             <th style="min-width: 8rem">
-                Nome
+                Firstname
                 <p-sortIcon field="name" />
             </th>
             <th pSortableColumn="surname" style="min-width:10rem">
-                Cognome
+                Lastname
                 <p-sortIcon field="surname" />
             </th>
             <th pSortableColumn="email" style="min-width:10rem">
@@ -81,15 +81,15 @@
                 <p-sortIcon field="email" />
             </th>
             <th style="min-width:8rem">
-                Ruolo
+                Roles
                 <p-sortIcon field="role" />
             </th>
             <th pSortableColumn="createDate" style="min-width:10rem">
-                Data creazione
+                Created at
                 <p-sortIcon field="createDate" />
             </th>
             <th pSortableColumn="createDate" style="min-width:10rem">
-                Data aggiornamento
+                Last update
                 <p-sortIcon field="updateDate" />
             </th>
             <th style="min-width: 12rem">
@@ -116,10 +116,10 @@
             <td style="min-width: 10rem">{{ account.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
             <td style="min-width: 10rem">{{ account.updatedAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
             <td>
-                <p-button icon="pi pi-eye" severity="info" class="mr-2" [rounded]="true" [outlined]="true" (click)="editAccount(account)" pTooltip="Visualizza" tooltipPosition="left"/>
-                <p-button icon="pi pi-verified" severity="success" class="mr-2" [rounded]="true" [outlined]="true" (click)="promoteAccount(account)" *ngIf="!account.roles.includes('ADMIN')" pTooltip="Promuovi ad ADMIN" tooltipPosition="left"/>
-                <p-button icon="pi pi-user" severity="success" class="mr-2" [rounded]="true" [outlined]="true" (click)="demoteAccount(account)" *ngIf="account.roles.includes('ADMIN')" pTooltip="Imposta come USER {{account.id===currentUserUserID? '(disabilitato per se stessi)':''}}" tooltipPosition="left" [disabled]="account.id===currentUserUserID"/>
-                <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deleteAccount(account)" pTooltip="Elimina {{account.id===currentUserUserID? '(disabilitato per se stessi)':''}}" tooltipPosition="left" [disabled]="account.id===currentUserUserID" />
+                <p-button icon="pi pi-eye" severity="info" class="mr-2" [rounded]="true" [outlined]="true" (click)="editAccount(account)" pTooltip="View" tooltipPosition="left"/>
+                <p-button icon="pi pi-verified" severity="success" class="mr-2" [rounded]="true" [outlined]="true" (click)="promoteAccount(account)" *ngIf="!account.roles.includes('ADMIN')" pTooltip="Promote to ADMIN" tooltipPosition="left"/>
+                <p-button icon="pi pi-user" severity="success" class="mr-2" [rounded]="true" [outlined]="true" (click)="demoteAccount(account)" *ngIf="account.roles.includes('ADMIN')" pTooltip="Set as USER {{account.id===currentUserUserID? '(disabled for themeselves)':''}}" tooltipPosition="left" [disabled]="account.id===currentUserUserID"/>
+                <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deleteAccount(account)" pTooltip="Delete {{account.id===currentUserUserID? '(disabled for themeselves)':''}}" tooltipPosition="right" [disabled]="account.id===currentUserUserID" />
             </td>
         </tr>
     </ng-template>

@@ -75,12 +75,12 @@ export class AppTopbar {
 
     overlayMenuItems = [
         {
-            label: 'Il mio profilo', icon: 'pi pi-home', routerLink: ['/pages/account']
+            label: 'My Profile', icon: 'pi pi-home', routerLink: ['/pages/account']
         },
         {
             separator: true
         },
-        { label: 'Esci', icon: 'pi pi-fw pi-sign-out', routerLink: ['/logout'] }
+        { label: 'Exit', icon: 'pi pi-fw pi-sign-out', routerLink: ['/logout'] }
     ];
 
 
