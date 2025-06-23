@@ -20,8 +20,8 @@
     }
 
     &.selected {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 10px var(--primary-color);
+      border-color: var(--p-button-warn-background);
+      box-shadow: 0 0 10px var(--p-button-warn-background);
     }
 
     .content {
@@ -56,13 +56,15 @@
 
   .actions { 
     border-radius: 5px;
-    background-color: var(--p-surface-800);
+    background-color: var(--p-button-text-contrast-hover-background);
+    border: 1px solid var(--p-button-text-contrast-hover-background);
+    color: var(--p-button-text-contrast-color);
   }
 }
 
 :host(.selected) {
   .custom-node {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 10px var(--primary-color);
+    border-color: var(--p-button-warn-background);
+    box-shadow: 0 0 10px var(--p-button-warn-background);
   }
 }

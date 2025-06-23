@@ -9,11 +9,10 @@ svg {
     stroke: var(--primary-color);
     pointer-events: auto;
     z-index: 1;
-    filter: drop-shadow(0 0 0 red);
 
     &.selected {
-      stroke: white;
-      box-shadow: 0 0 10px var(--primary-color);
+      stroke: var(--p-button-warn-background);
+      filter: drop-shadow(0 0 5px var(--p-button-warn-background));
     }
   }
 }
@@ -24,9 +23,6 @@ svg {
   pointer-events: auto;
   stroke: transparent;
 }
-
-
-
 
 .label {
   position: absolute;
