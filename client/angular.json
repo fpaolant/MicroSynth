@@ -27,11 +27,15 @@
                         "inlineStyleLanguage": "scss",
                         "assets": [
                             { "glob": "**/*", "input": "src/public", "output": "/" },
-                            { "glob": "**/*", "input": "node_modules/monaco-editor/min/vs", "output": "assets/monaco/min/vs" }
+                            { "glob": "**/*", "input": "node_modules/monaco-editor/min/vs", "output": "assets/monaco/min/vs" },
+                            { "glob": "**/*", "input": "node_modules/monaco-editor/esm", "output": "assets/monaco-editor" }
                         ],
                         "styles": [
                             "src/styles.scss"
                         ],
+                        "loader": {
+                            ".ttf": "binary"
+                        },
                         "scripts": []
                     },
                     "configurations": {

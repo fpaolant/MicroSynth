@@ -1,5 +1,5 @@
 services:
-  ms-mongodb:
+  msynth-mongodb:
     image: mongo:latest
     environment:
       MONGO_INITDB_DATABASE: microsynth
@@ -8,30 +8,36 @@ services:
     ports:
       - 27017:27017
     volumes:
-      - mongo_data:/data/db
+      - msynth-mongo_data:/data/db
       - ./init-mongo:/docker-entrypoint-initdb.d
 
-  ms-backend:
+  msynth-backend:
     build:
       context: .
       dockerfile: ./Dockerfile
-    image: ms-backend
+    image: msynth-backend
     ports:
       - "8080:8080"
+    environment:
+      MONGODB_URI: mongodb://root:secret@msynth-mongodb:27017/microsynth?authSource=admin
+      JWT_SECRET: MTIzNDU2MBhNzg5MGFiY2RlZmdoaWprmignbG12ub3A=
+      JWT_EXPIRATION: 3600000
     depends_on:
-      ms-mongodb:
-        condition: service_healthy
+      msynth-mongodb:
+        condition: service_started
 
-  ms-client:
+  msynth-client:
     build:
       context: .
       dockerfile: client/Dockerfile
-    image: ms-client
+    image: msynth-client
+    environment:
+      API_URL: http://msynth-backend:8080
     ports:
       - "80:80"
     depends_on:
-      ms-backend:
+      msynth-backend:
         condition: service_started
 
 volumes:
-  mongo_data:
+  msynth-mongo_data:

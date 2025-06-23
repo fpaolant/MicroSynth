@@ -21,14 +21,10 @@ FROM nginx:alpine
 
 COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
-CMD ["ls", "-la", "/usr/share/nginx/html;"]
-
 CMD ["rm", "-rf", "/usr/share/nginx/html/*;"]
 
 # Copia i file generati nella directory di Nginx
-COPY --from=build /app/dist/real-estate-ads/browser /usr/share/nginx/html
-
-CMD ["ls", "-la", "/usr/share/nginx/html;"]
+COPY --from=build /app/dist/microsynth/browser /usr/share/nginx/html
 
 # Espone la porta 80
 EXPOSE 80
