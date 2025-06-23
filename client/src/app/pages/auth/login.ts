@@ -26,7 +26,7 @@ import { AppLogo } from '../../layout/component/app.logo';
                         <div class="text-center mb-8">
                             <app-logo width="160" height="160" />
                             <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Welcome to MicroSynth!</div>
-                            <span class="text-muted-color font-medium">Effettua il login per continuare</span>
+                            <span class="text-muted-color font-medium">Login to continue</span>
                         </div>
 
                         <div>
@@ -43,12 +43,12 @@ import { AppLogo } from '../../layout/component/app.logo';
                                 </div> -->
                                 <!-- <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot password?</span> -->
                             </div>
-                            <p-button label="Entra" styleClass="w-full mb-8" (onClick)="onLogin()" ></p-button>
+                            <p-button label="Sign in" styleClass="w-full mb-8" (onClick)="onLogin()" ></p-button>
 
                             <p-divider layout="horizontal" align="center"><b>OR</b></p-divider>
-                            <p-button label="Registrati" icon="pi pi-user-plus" severity="success" class="w-full" styleClass="w-full mx-auto mb-4" routerLink="/auth/signup" />
+                            <p-button label="Sign up" icon="pi pi-user-plus" severity="success" class="w-full" styleClass="w-full mx-auto mb-4" routerLink="/auth/signup" />
 
-                            <p-button label="Torna alla home" styleClass="p-button-outlined w-full " routerLink="/" ></p-button>
+                            <p-button label="Back to home" styleClass="p-button-outlined w-full " routerLink="/" ></p-button>
                         </div>
                     </div>
                 </div>
