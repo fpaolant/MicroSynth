@@ -3,7 +3,7 @@
     <p-dataview [value]="projects()" [layout]="'grid'">
         <ng-template #header>
             <div class="flex justify-end">
-                <p-button *ngIf="(projects?.length ?? 0) > 0 || false" icon="pi pi-plus" text raised rounded (click)="openProjectDialog()" />
+                <p-button *ngIf="(projects() ?? []).length > 0" icon="pi pi-plus" text raised rounded (click)="openProjectDialog()" />
             </div>
         </ng-template>
 
