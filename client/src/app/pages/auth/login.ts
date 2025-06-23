@@ -43,12 +43,12 @@ import { AppLogo } from '../../layout/component/app.logo';
                                 </div> -->
                                 <!-- <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot password?</span> -->
                             </div>
-                            <p-button label="Sign in" styleClass="w-full mb-8" (onClick)="onLogin()" ></p-button>
+                            <p-button label="Sign in" styleClass="w-full mb-8" (onClick)="onLogin()" [disabled]="actionsDisabled"></p-button>
 
                             <p-divider layout="horizontal" align="center"><b>OR</b></p-divider>
-                            <p-button label="Sign up" icon="pi pi-user-plus" severity="success" class="w-full" styleClass="w-full mx-auto mb-4" routerLink="/auth/signup" />
+                            <p-button label="Sign up" icon="pi pi-user-plus" severity="success" class="w-full" styleClass="w-full mx-auto mb-4" routerLink="/auth/signup" [disabled]="actionsDisabled" />
 
-                            <p-button label="Back to home" styleClass="p-button-outlined w-full " routerLink="/" ></p-button>
+                            <p-button label="Back to home" styleClass="p-button-outlined w-full " routerLink="/" [disabled]="actionsDisabled"></p-button>
                         </div>
                     </div>
                 </div>
@@ -61,10 +61,12 @@ export class Login implements OnInit {
     returnUrl: string = '/'; // Default redirect
 
     username: string = 'admin';
-    password: string = 'admin';
+    password: string = '12345';
 
     authService = inject(AuthService);
     messageService = inject(MessageService);
+
+    actionsDisabled = false;
     
     constructor(private route: ActivatedRoute, private router: Router) {}
 
@@ -73,7 +75,7 @@ export class Login implements OnInit {
     //checked: boolean = false;
 
     ngOnInit() {
-        this.router.navigate(['/auth/login']);
+       // this.router.navigate(['/auth/login']);
         this.route.queryParams.subscribe(params => {
             this.returnUrl = params['returnUrl'] || '/';
         });
@@ -81,6 +83,7 @@ export class Login implements OnInit {
 
     onLogin() {
         const credentials = { username: this.username, password: this.password };
+        this.actionsDisabled = true;
         this.authService.login(credentials).subscribe(
             (response) => {
                 this.showMessage('success', 'Login succesful', 'Success');
@@ -88,6 +91,9 @@ export class Login implements OnInit {
             },
             (error) => {
                 this.showMessage('error', 'Error during login', 'Error');
+            },
+            () => {
+                this.actionsDisabled = false
             }
         );      
 

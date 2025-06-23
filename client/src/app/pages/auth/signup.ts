@@ -15,6 +15,7 @@ import { CommonModule } from "@angular/common";
 import { ToastModule } from "primeng/toast";
 import { MessageService } from "primeng/api";
 import { AuthService, UserRequest } from "../../services/auth.service";
+import { AppLogo } from "../../layout/component/app.logo";
 
 @Component({
   selector: "app-signup",
@@ -33,6 +34,7 @@ import { AuthService, UserRequest } from "../../services/auth.service";
     InputIcon,
     MessageModule,
     ToastModule,
+    AppLogo
   ],
   templateUrl: './signup.html'
 })
@@ -48,7 +50,7 @@ export class Signup implements OnInit {
     lastname: new FormControl<string>('', [Validators.required, Validators.nullValidator]),
     username: new FormControl<string>('', [Validators.required, Validators.nullValidator]),
     password: new FormControl<string>('', [Validators.required, Validators.nullValidator]),
-    email: new FormControl<string>('info@mail.com', [Validators.required, Validators.email, Validators.nullValidator])
+    email: new FormControl<string>('', [Validators.required, Validators.email, Validators.nullValidator])
   });
 
 
