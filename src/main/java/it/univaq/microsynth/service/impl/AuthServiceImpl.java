@@ -2,6 +2,7 @@ package it.univaq.microsynth.service.impl;
 
 import it.univaq.microsynth.domain.Role;
 import it.univaq.microsynth.domain.User;
+import it.univaq.microsynth.domain.dto.ChangePasswordDTO;
 import it.univaq.microsynth.domain.dto.LoginResponseDTO;
 import it.univaq.microsynth.domain.dto.UserCredentialsDTO;
 import it.univaq.microsynth.domain.dto.UserDTO;
@@ -83,6 +84,26 @@ public class AuthServiceImpl implements AuthService {
 
         String newToken = jwtService.generateToken(user.get());
         return ResponseEntity.ok(new LoginResponseDTO(newToken, user.get().getUsername()));
+    }
+
+    @Override
+    public ResponseEntity<Boolean> changePassword(ChangePasswordDTO changePasswordDTO) {
+        Optional<User> optionalUser = userRepository.findByUsername(changePasswordDTO.getUsername());
+
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(404).body(false);
+        }
+
+        User user = optionalUser.get();
+
+        if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())) {
+            return ResponseEntity.status(401).body(false);
+        }
+
+        user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+        userRepository.save(user);
+
+        return ResponseEntity.ok(true);
     }
 
 }

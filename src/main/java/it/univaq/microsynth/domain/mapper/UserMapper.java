@@ -15,6 +15,5 @@ public interface UserMapper {
     User responseDTOToUser(UserResponseDTO userResponseDTO);
 
     UserDTO userToUserDto(User user);
-    @Mapping(target = "id", ignore = true)
     User userDTOToUser(UserDTO userDTO);
 }

@@ -70,5 +70,17 @@ public class AuthController {
         return ResponseEntity.ok(this.jwtService.validateToken(tokenDTO.getToken()));
     }
 
+    @Operation(summary = "Change password", description = "Change user password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password changed successfully"),
+            @ApiResponse(responseCode = "401", description = "Old password incorrect"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server Error")
+    })
+    @PostMapping("/change-password")
+    public ResponseEntity<Boolean> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO) {
+        return this.authService.changePassword(changePasswordDTO);
+    }
+
 
 }
