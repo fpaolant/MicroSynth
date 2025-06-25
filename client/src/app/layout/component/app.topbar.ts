@@ -46,18 +46,19 @@ import { AppLogo } from './app.logo';
                 </div>
             </div>
 
-                    <button type="button" class="ml-8 mr-8 layout-topbar-action" (click)="onAccountClick()" *ngIf="!this.authService.isLogged()">
-                        <i class="pi pi-user"></i>
-                        <span>Profile</span>
-                    </button>
+            <button type="button" class="ml-8 mr-8 layout-topbar-action" (click)="onAccountClick()" *ngIf="!this.authService.isLogged()">
+                <i class="pi pi-user"></i>
+                <span>Profile</span>
+            </button>
 
-                    <p-menu #menu [popup]="true" [model]="overlayMenuItems"></p-menu>
-                    <!-- <button type="button" pButton icon="pi pi-chevron-down" label="Options"  style="width:auto"></button> -->
-                    <button type="button" class="ml-8 mr-8 layout-topbar-action" label="Options" (click)="menu.toggle($event)" *ngIf="this.authService.isLogged()">
-                        <i class="pi pi-user"></i>
-                        &nbsp;{{ username || '' }}&nbsp;
-                        <i class="pi pi-chevron-down"></i>
-                    </button>
+                    
+            <!-- <button type="button" pButton icon="pi pi-chevron-down" label="Options"  style="width:auto"></button> -->
+            <button type="button" class="ml-8 mr-8 layout-topbar-action" label="Options" (click)="menuProfile.toggle($event)" *ngIf="this.authService.isLogged()">
+                <i class="pi pi-user"></i>
+                &nbsp;{{ username || '' }}&nbsp;
+                <i class="pi pi-chevron-down"></i>
+            </button>
+            <p-menu #menuProfile [popup]="true" [model]="overlayMenuItems"></p-menu>
         </div>
     </div>`,
     styles: `
