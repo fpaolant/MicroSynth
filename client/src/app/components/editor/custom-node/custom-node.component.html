@@ -1,4 +1,4 @@
-<div class="custom-node">
+<div class="custom-node" [style.height.px]="data.height" [style.width.px]="data.width">
   <div class="content animate-once animate-duration-500 animate-ping">
     <div
       class="title"
@@ -9,7 +9,7 @@
     >
       {{
         data.label.length > labelMaxlength
-          ? (data.label | slice: 0 : 5) + "…"
+          ? (data.label | slice: 0 : labelMaxlength) + "…"
           : data.label
       }}
     </div>

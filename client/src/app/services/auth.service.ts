@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { jwtDecode } from 'jwt-decode';
 import { Observable, tap } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 // Requests
 export interface UserCredentials {
@@ -22,6 +22,11 @@ export interface UserRequest {
   email: string;
 }
 
+export interface ChangePasswordRequest {
+  username: string;
+  oldPassword: string;
+  newPassword: string;
+}
 
 
 @Injectable({
@@ -51,6 +56,15 @@ export class AuthService {
 
   register(user: UserRequest): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(`${this.baseUrl}/register`, user);
+  }
+
+  changePassword(data: ChangePasswordRequest): Observable<boolean> {
+    const headers = new HttpHeaders({ 
+      'Content-Type': 'application/json',
+      'Use-Auth': 'true'
+    });
+
+    return this.http.post<boolean>(`${this.baseUrl}/change-password`, data, {headers});
   }
 
   isLogged(): boolean {

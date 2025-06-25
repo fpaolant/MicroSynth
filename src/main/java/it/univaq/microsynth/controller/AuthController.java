@@ -66,7 +66,6 @@ public class AuthController {
     })
     @PostMapping("/check-token")
     public ResponseEntity<Boolean> checkToken(@RequestBody TokenDTO tokenDTO) {
-        log.info("token: {}", tokenDTO.getToken());
         return ResponseEntity.ok(this.jwtService.validateToken(tokenDTO.getToken()));
     }
 
@@ -79,6 +78,7 @@ public class AuthController {
     })
     @PostMapping("/change-password")
     public ResponseEntity<Boolean> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO) {
+        log.info("change password: {}", changePasswordDTO.toString());
         return this.authService.changePassword(changePasswordDTO);
     }
 

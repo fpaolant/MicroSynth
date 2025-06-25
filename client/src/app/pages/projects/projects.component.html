@@ -21,7 +21,7 @@
                     transition-all duration-200 hover:shadow-lg hover:border-primary-500 cursor-pointer h-full animate-once animate-duration-500 animate-zoomin" (click)="selectProject(item.id)">
                         <div class="flex flex-col absolute">
                             <div class="flex gap-2">
-                                <p-button *ngIf="item.diagrams.length===0" icon="pi pi-times" size="small" [rounded]="true" [text]="true" severity="danger" (click)="deleteProject(item); $event.stopPropagation()" pTooltip="Delete" />
+                                <p-button *ngIf="item.diagrams.length===0" icon="pi pi-times" size="small" [rounded]="true" [text]="true" severity="danger" (pointerdown)="$event.stopPropagation()" (click)="deleteProject(item); $event.stopPropagation()" pTooltip="Delete" />
                             </div>
                         </div>
                         <div class="flex justify-center rounded">

@@ -13,6 +13,8 @@
   (pointerdown)="$event.stopPropagation()"
   (click)="data.click(data)"
   [value]="data.label"
+  pTooltip="data.label"
+  tooltipPosition="top"
   [style.left.px]="point.x"
   [style.top.px]="point.y"
 />
@@ -21,7 +23,7 @@
   class="flex flex-row actions"
   *ngIf="point && data.selected"
   [style.left.px]="point.x"
-  [style.top.px]="point.y + 80"
+  [style.top.px]="point.y + 60"
 >
   <p-button
     (pointerdown)="$event.stopImmediatePropagation()"

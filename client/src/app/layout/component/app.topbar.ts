@@ -79,6 +79,11 @@ export class AppTopbar {
             label: 'My Profile', icon: 'pi pi-home', routerLink: ['/pages/account']
         },
         {
+            label: 'Change Password', icon: 'pi pi-home',
+            routerLink: ['/auth/change-password'],
+            queryParams: { returnUrl: this.router.url }
+        },
+        {
             separator: true
         },
         { label: 'Exit', icon: 'pi pi-fw pi-sign-out', routerLink: ['/logout'] }

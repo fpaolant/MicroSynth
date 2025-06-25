@@ -52,7 +52,11 @@ import { hasCycle } from './util/math';
 import { DiagramData } from '../../services/diagram.service';
 import { TooltipModule } from 'primeng/tooltip';
 import { UploadFileDialogComponent } from '../upload-file-dialog/upload-file-dialog.component';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+import { forkJoin, from, Observable, of } from 'rxjs';
+import { switchMap, take } from 'rxjs/operators';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 
 
@@ -66,7 +70,8 @@ import { MessageService } from 'primeng/api';
   selector: 'app-editor',
   standalone: true,
   imports: [CommonModule, FormsModule, ToolbarModule, ButtonModule, IconFieldModule, InputIconModule, 
-    SplitButtonModule, DropdownModule, TooltipModule, UploadFileDialogComponent],
+    SplitButtonModule, DropdownModule, TooltipModule, UploadFileDialogComponent, ToastModule, ConfirmDialogModule],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './editor.component.html',
   styles: [
     `
@@ -81,6 +86,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   @ViewChild('editor', { static: true }) containerRef!: ElementRef;
   injector = inject(Injector);
   messageService = inject(MessageService);
+  confirmationService = inject(ConfirmationService);
 
   private _diagram!: DiagramData;
   @Input()
@@ -122,6 +128,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
 
   private connectionEvents: any;
 
+  private connectionExcludedFromCycleCheck: Connection<Node, Node>[] = [];
 
   shapes: Shape[] = ['ellipse', 'circle', 'rect'];
   selectedShape: Shape = 'circle';
@@ -183,22 +190,44 @@ export class EditorComponent implements OnInit, AfterViewInit {
 
       if(context.type === 'cleared') this.editorAreaCleared.emit();
 
+
+      if(context.type === 'cleared') this.connectionExcludedFromCycleCheck =[];
+
       this.areaEventsChange.emit(context);
       return context;
     });
 
     // listen on events on the editor
-    this.editor.addPipe((c) => {
+    this.editor.addPipe(async (context) => {
         if (
           ['nodecreated', 'noderemoved', 'nodeupdated', 
           'connectioncreated', 'connectionremoved', 'connectionupdated']
-          .includes(c.type)
+          .includes(context.type)
         ) {
           this.diagramTouched = true;
         }
 
-        this.editorEventsChange.emit(c);
-        return c;
+        if (context.type === "connectionremoved") {
+          this.connectionExcludedFromCycleCheck = this.connectionExcludedFromCycleCheck.filter(
+            (conn) => !(conn.source === context.data.source && conn.target === context.data.target)
+          );
+        }
+
+        if (context.type === "connectioncreate") {
+          const allowed = await this.canCreateConnection(context.data);
+          if (!allowed) return; // blocca la connessione
+        }
+
+        if (context.type === 'noderemoved')  {
+          this.editor.getConnections().forEach((con) => {
+            if (con.source === context.data.id || con.target === context.data.id) {
+              this.editor.removeConnection(con.id);
+            }
+          });
+        }
+
+        this.editorEventsChange.emit(context);
+        return context;
     });
 
     const selector = this.createSelector();
@@ -210,6 +239,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
         this.editor.removeConnection(data.id)
       }
     }
+    
 
     connectionPlugin.addPreset(() => new UniPortConnector(this.connectionEvents, this.editor));
 
@@ -223,45 +253,87 @@ export class EditorComponent implements OnInit, AfterViewInit {
     return () => this.area.destroy();
   }
 
-  // load diagram from component input
-  loadDiagram(clearBefore:boolean = false) {
-    if(!this.diagram) return;
+  
 
-    const loadData = () => {
-      let calls: Promise<any>[] = [];
-      for(let node of this.diagram.nodes) {
-        calls.push(this.addNode(node.id, node.label, node.shape as Shape, node.payload, node.weight));
-      }
-
-      for(let connection of this.diagram.connections) {
-        calls.push(
-          this.editor.addConnection({
-              id: connection.id,
-              source: connection.source,
-              sourceOutput: 'default',
-              target: connection.target,
-              targetInput: 'default',
-              isLoop: connection.isLoop,
-              weight: connection.weight,
-              label: connection.label,
-              payload: connection.payload,
-              click: this.connectionEvents.click,
-              remove: this.connectionEvents.remove
-            } as Connection<Node, Node>)
-          );
-      }
-      return Promise.all(calls)
+  canCreateConnection(data: Connection<Node, Node>): Promise<boolean> {
+    let connections = [...this.editor.getConnections(), data].filter((c) => !this.connectionExcludedFromCycleCheck.includes(c));
+    
+    if (hasCycle(this.editor.getNodes(), connections)) {
+      return new Promise((resolve) => {
+        this.confirmationService.confirm({
+          header: 'Are you sure?',
+          message: 'Adding this connection can create cycle inside the graph.',
+          acceptLabel: 'Add anyway',
+          rejectLabel: 'Cancel',
+          accept: () => {
+            this.connectionExcludedFromCycleCheck.push(data);
+            resolve(true);
+          },
+          reject: () => resolve(false),
+        });
+      });
     }
+    return Promise.resolve(true);
+  }
 
-    let loadAllDataPromise: Promise<any>; 
-    if(clearBefore) loadAllDataPromise = this.editor.clear().then(loadData);
-    else loadAllDataPromise = loadData()
-    // reorder
-    loadAllDataPromise.then(()=>{
-      this.reorder();
-      this.diagramTouched = true;
+
+  // load diagram from component input
+  loadDiagram(clearBefore: boolean = false) {
+    if (!this.diagram) return;
+  
+    const loadData = (): Observable<boolean[]> => {
+      const nodeCalls: Observable<boolean>[] = [];
+      const connectionCalls: Observable<boolean>[] = [];
+  
+      // nodes
+      for (let node of this.diagram.nodes) {
+        nodeCalls.push(this.addNode(node.id, node.label, node.shape as Shape, node.payload, node.weight));
+      }
+  
+      // connections
+      for (let connection of this.diagram.connections) {
+        const conn$ = from(this.editor.addConnection({
+          id: connection.id,
+          source: connection.source,
+          sourceOutput: 'default',
+          target: connection.target,
+          targetInput: 'default',
+          isLoop: connection.isLoop,
+          weight: connection.weight,
+          label: connection.label,
+          payload: connection.payload,
+          click: this.connectionEvents.click,
+          remove: this.connectionEvents.remove
+        } as Connection<Node, Node>));
+
+        connectionCalls.push(conn$);
+      }
+  
+      
+      return forkJoin(nodeCalls).pipe(
+        switchMap(() => forkJoin(connectionCalls))
+      );
+    };
+  
+    const clear$: Observable<any> = clearBefore
+      ? from(this.editor.clear()) // converte Promise in Observable
+      : of(null);
+  
+    clear$.pipe(
+      switchMap(() => loadData()),
+      take(1)
+    ).subscribe({
+      next: () => {
+        console.log("Diagram imported succesfully!");
+        this.reorder();
+        this.diagramTouched = true;
+      },
+      error: (err) => {
+        console.error("Error during diagram import", err);
+      }
     });
   }
+  
 
   private addPresets(render: any) {
     const socketPositionWatcher = this.socketPositionWatcher;
@@ -349,25 +421,19 @@ export class EditorComponent implements OnInit, AfterViewInit {
   //
   //
   //
-  async addNode(
+  addNode(
     id: string = getUID(),
     label: string = 'Node A',
     shape: Shape = 'circle',
     payload: any = { code: '', language: 'plaintext' },
     weight: number = 0
-  ) {
+  ): Observable<boolean> {
     const node = new Node(label, shape, {
       remove: async (data: Node) => {
         const nodeId = data.id;
         await this.editor.removeNode(data.id);
-        this.editor.getConnections().forEach((c) => {
-          if (c.source === nodeId || c.target === nodeId) {
-            this.editor.removeConnection(c.id);
-          }
-        });
       },
       duplicate: (data: Node) => {
-        console.log('duplicate', data);
         this.addNode(getUID(), data.label + ' - Copy', data.shape, data.payload, data.weight);
       },
     });
@@ -376,7 +442,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
     node.weight = weight;
     node.payload = payload;
   
-    await this.editor.addNode(node);
+    return from(this.editor.addNode(node));
   }
   
 
@@ -417,7 +483,6 @@ export class EditorComponent implements OnInit, AfterViewInit {
 
   async onShapeChange(event: DropdownChangeEvent) {
     const value = event.value as Shape;
-    console.log('Shape changed to:', value);
 
     this.editor.getNodes().forEach(node => {
       node.shape = value
@@ -426,18 +491,6 @@ export class EditorComponent implements OnInit, AfterViewInit {
       node.shape = value
       this.area.update('node', node.id)
     });
-  }
-
-  async importJson(json: any) {
-    const graph = JSON.parse(json);
-    for (const node of graph!.nodes) {
-      await this.editor.addNode(node)
-    }
-
-    for (const connection of graph!.connections) {
-      await this.editor.addConnection(connection);
-    }
-    this.reorder();
   }
   
   exportAsJson() {
@@ -468,7 +521,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
 
   onFileParsed(fileData: { name: string, content: string }) {
     try {
-      this.diagram =  JSON.parse(fileData.content);
+      this.diagram = JSON.parse(fileData.content);
       this.loadDiagram(true);
       this.messageService.add({
         severity: 'success',
@@ -484,9 +537,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
     }
   }
   
-  onCancelUpload() {
-    
-  }
+  onCancelUpload() {}
 
   
 }

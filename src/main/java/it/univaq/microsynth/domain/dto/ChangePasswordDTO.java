@@ -1,8 +1,14 @@
 package it.univaq.microsynth.domain.dto;
 
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
+@Schema(description = "DTO to represent a change password request")
 public class ChangePasswordDTO {
     private String username;
     private String oldPassword;

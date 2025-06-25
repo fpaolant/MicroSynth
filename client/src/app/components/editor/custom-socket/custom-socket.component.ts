@@ -3,8 +3,7 @@ import {
     Input,
     HostBinding,
     ChangeDetectorRef,
-    OnChanges,
-    OnInit
+    OnChanges
   } from "@angular/core";
   
   
@@ -15,7 +14,7 @@ import {
     template: ``,
     styleUrls: ["./custom-socket.component.scss"]
   })
-  export class CustomSocketComponent implements OnChanges, OnInit {
+  export class CustomSocketComponent implements OnChanges {
     @Input() data!: any;
     @Input() rendered!: any;
   
@@ -25,10 +24,6 @@ import {
   
     constructor(private cdr: ChangeDetectorRef) {
       this.cdr.detach();
-    }
-    
-    ngOnInit(): void {
-        console.log("custom socket component data ",this.data, "rendered ", this.rendered);
     }
   
     ngOnChanges(): void {

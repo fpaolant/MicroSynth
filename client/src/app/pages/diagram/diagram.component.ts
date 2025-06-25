@@ -137,7 +137,7 @@ export class DiagramPage implements OnInit, AfterViewInit {
 
   // editor area handlers
   onEditorAreaCleared(event: any) {
-    console.log("Editor area cleared:", event);
+    
   }
 
   onSave($event: any) {

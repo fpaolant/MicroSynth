@@ -74,7 +74,6 @@ export class CustomNodeComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
-    console.log("CustomNodeComponent initialized with data:", this.data);
     this.labelDraft = this.data.label || "";
     this.weightDraft = this.data.weight || 0;
     this.payloadDraft = this.data.payload?.code || "";
@@ -146,7 +145,6 @@ export class CustomNodeComponent implements OnInit, OnChanges {
   }
 
   showPayloadDialog() {
-    console.log("showpayload node dialog", this.payloadDraft)
     this.payloadDialogVisible = true;
   }
 
