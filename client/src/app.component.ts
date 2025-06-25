@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { FaviconService } from './app/services/favicon.service';
+import { FaviconService } from './app/layout/service/favicon.service';
 
 @Component({
     selector: 'app-root',
