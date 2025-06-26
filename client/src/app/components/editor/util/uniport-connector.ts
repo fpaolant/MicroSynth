@@ -34,7 +34,8 @@ export class UniPortConnector<S extends ClassicScheme, K extends any[]> extends 
                         language: 'json',
                       },
                       click: connectionEvents.click,
-                      remove: connectionEvents.remove
+                      remove: connectionEvents.remove,
+                      propertyChange: connectionEvents.propertyChange
                     } as S['Connection']);
           return true
         }

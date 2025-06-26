@@ -8,7 +8,8 @@ import {
   AfterViewInit,
   Output,
   EventEmitter,
-  Input
+  Input,
+  signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -55,7 +56,7 @@ import { UploadFileDialogComponent } from '../upload-file-dialog/upload-file-dia
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { forkJoin, from, Observable, of } from 'rxjs';
-import { switchMap, take } from 'rxjs/operators';
+import { finalize, switchMap, take } from 'rxjs/operators';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 
@@ -93,7 +94,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   set diagram(value: DiagramData) {
     this._diagram = value;
     if (this.editor) {
-      this.loadDiagram();
+      this.loadDiagram(false);
     }
   }
   
@@ -136,6 +137,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   loopConnectionsEnabled = false;
   uploadFileVisible = false;
   diagramTouched = false;
+  loadingDiagram = signal(false);
   
   ngOnInit(): void {
       this.editor = new NodeEditor<Schemes>();
@@ -204,7 +206,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
           'connectioncreated', 'connectionremoved', 'connectionupdated']
           .includes(context.type)
         ) {
-          this.diagramTouched = true;
+          if(! this.loadingDiagram() ) this.diagramTouched = true;
         }
 
         if (context.type === "connectionremoved") {
@@ -215,7 +217,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
 
         if (context.type === "connectioncreate") {
           const allowed = await this.canCreateConnection(context.data);
-          if (!allowed) return; // blocca la connessione
+          if (!allowed) return;
         }
 
         if (context.type === 'noderemoved')  {
@@ -225,6 +227,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
             }
           });
         }
+
 
         this.editorEventsChange.emit(context);
         return context;
@@ -237,6 +240,9 @@ export class EditorComponent implements OnInit, AfterViewInit {
       },
       remove: (data: Schemes['Connection']) => {
         this.editor.removeConnection(data.id)
+      },
+      propertyChange: (key: string, value:any) => {
+        this.diagramTouched = true;
       }
     }
     
@@ -278,8 +284,10 @@ export class EditorComponent implements OnInit, AfterViewInit {
 
 
   // load diagram from component input
-  loadDiagram(clearBefore: boolean = false) {
+  loadDiagram(clearBefore: boolean = false, action: 'init' | 'import' = 'init') {
     if (!this.diagram) return;
+
+    this.loadingDiagram.set(true);
   
     const loadData = (): Observable<boolean[]> => {
       const nodeCalls: Observable<boolean>[] = [];
@@ -303,7 +311,8 @@ export class EditorComponent implements OnInit, AfterViewInit {
           label: connection.label,
           payload: connection.payload,
           click: this.connectionEvents.click,
-          remove: this.connectionEvents.remove
+          remove: this.connectionEvents.remove,
+          propertyChange: this.connectionEvents.propertyChange
         } as Connection<Node, Node>));
 
         connectionCalls.push(conn$);
@@ -321,15 +330,25 @@ export class EditorComponent implements OnInit, AfterViewInit {
   
     clear$.pipe(
       switchMap(() => loadData()),
-      take(1)
+      take(1),
+      finalize(()=>{ this.loadingDiagram.set(false); })
     ).subscribe({
       next: () => {
-        console.log("Diagram imported succesfully!");
         this.reorder();
-        this.diagramTouched = true;
+        if(action === 'import') { 
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Graph loaded successfully',
+          });
+          this.diagramTouched = true;
+        }
       },
       error: (err) => {
-        console.error("Error during diagram import", err);
+        console.error("Error during graph import", err);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error during graph import',
+        });
       }
     });
   }
@@ -436,6 +455,9 @@ export class EditorComponent implements OnInit, AfterViewInit {
       duplicate: (data: Node) => {
         this.addNode(getUID(), data.label + ' - Copy', data.shape, data.payload, data.weight);
       },
+      propertyChange: (key: string, value:any) => {
+        this.diagramTouched = true;
+      }
     });
   
     node.id = id;
@@ -522,7 +544,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   onFileParsed(fileData: { name: string, content: string }) {
     try {
       this.diagram = JSON.parse(fileData.content);
-      this.loadDiagram(true);
+      this.loadDiagram(true, 'import');
       this.messageService.add({
         severity: 'success',
         summary: 'File imported successfully',

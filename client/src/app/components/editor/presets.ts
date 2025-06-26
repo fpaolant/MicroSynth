@@ -23,13 +23,16 @@ export class Connection<A extends Node, B extends Node> extends ClassicPreset.Co
 
   click: (c: Connection<A, B>) => void;
   remove: (c: Connection<A, B>) => void;
+  propertyChange: (key: string, value: any) => void;
 
   curve?: CurveFactory;
 
-  constructor(events: { click: (data: Connection<A, B>) => void, remove: (data: Connection<A, B>) => void }, source: A, target: B, public isLoop: boolean = false) {
+  constructor(events: { click: (data: Connection<A, B>) => void, remove: (data: Connection<A, B>) => void, propertyChange: (key: string, value: any) => void }, 
+  source: A, target: B, public isLoop: boolean = false) {
     super(source, 'default', target, 'default')
-    this.click = events.click
-    this.remove = events.remove
+    this.click = events.click;
+    this.remove = events.remove;    
+    this.propertyChange = events.propertyChange;
   }
 }
 
@@ -46,14 +49,17 @@ export class Node extends ClassicPreset.Node {
 
   remove: (c: Node) => void;
   duplicate: (c: Node) => void;
+  propertyChange: (key: string, value: any) => void;
 
-  constructor(label: string, public shape: Shape = 'circle', events: {remove: (data: Node) => void , duplicate: (data: Node) => void }) {
+  constructor(label: string, public shape: Shape = 'circle', 
+    events: { remove: (data: Node) => void, duplicate: (data: Node) => void, propertyChange: (key: string, value: any) => void }) {
     super(label);
 
     this.addInput('default', new ClassicPreset.Input(new Socket('default')));
     this.addOutput('default', new ClassicPreset.Output(new Socket('default')));
-    this.remove = events.remove
-    this.duplicate = events.duplicate
+    this.remove = events.remove;
+    this.duplicate = events.duplicate;
+    this.propertyChange = events.propertyChange;
   }
 }
 

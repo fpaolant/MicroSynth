@@ -57,8 +57,8 @@
             <span class="font-bold text-2xl block mb-2 mt-6">{{ message.header }}</span>
             <p class="mb-0">{{ message.message }}</p>
             <div class="flex items-center gap-2 mt-6">
-                <p-button label="Save" (onClick)="onAccept()" styleClass="w-32"></p-button>
                 <p-button label="Cancel" [outlined]="true" (onClick)="onReject()" styleClass="w-32"></p-button>
+                <p-button label="Add anyway" (onClick)="onAccept()" styleClass="w-32"></p-button>
             </div>
         </div>
     </ng-template>

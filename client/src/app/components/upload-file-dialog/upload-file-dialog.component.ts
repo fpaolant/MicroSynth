@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, input, Input, Output } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, input, Input, Output, ViewChild } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
-import { FileUploadModule } from 'primeng/fileupload';
+import { FileUpload, FileUploadModule } from 'primeng/fileupload';
 
 @Component({
   standalone: true,
@@ -17,7 +17,8 @@ import { FileUploadModule } from 'primeng/fileupload';
   styleUrl: './upload-file-dialog.component.scss'
 })
 export class UploadFileDialogComponent {
-  
+  @ViewChild('fu') fileUpload!: FileUpload;
+
   @Input() visible: boolean = false;
   @Output() visibleChange = new EventEmitter<boolean>(); // for [(visible)]
 
@@ -35,8 +36,6 @@ export class UploadFileDialogComponent {
 
   uploadedFiles: { name: string; size: number; content: string }[] = [];
 
-
-
   onFileSelect(event: any) {
     const files: File[] = event.files;
 
@@ -50,20 +49,17 @@ export class UploadFileDialogComponent {
           name: file.name,
           content,
         });
-
         
         if (!this.multiple && this.closeOnfinish) {
           this.closeDialog();
         }
       };
 
-      reader.onerror = () => {
-      };
+      reader.onerror = () => {};
 
       reader.readAsText(file);
     }
   }
-
 
   closeDialog() {
     this.visible = false;

@@ -80,7 +80,7 @@
           <button
             pButton
             icon="pi pi-save"
-            (click)="data.label = labelDraft"
+            (click)="saveLabel()"
           ></button>
         </p-inputgroup-addon>
       </p-inputgroup>
@@ -95,6 +95,7 @@
         inputId="minmax-buttons"
         [min]="0"
         [max]="100"
+        (ngModelChange)="changeWeight()"
       />
     </div>
   </div>
@@ -137,7 +138,7 @@
       label="Cancel"
       [text]="true"
       severity="secondary"
-      (click)="payloadDialogVisible = false"
+      (click)="cancelPayload()"
     />
     
     <p-button

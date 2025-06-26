@@ -148,10 +148,26 @@ export class CustomNodeComponent implements OnInit, OnChanges {
     this.payloadDialogVisible = true;
   }
 
+  changeWeight() {
+    this.data.propertyChange('weight', this.data.weight);
+  }
+
+  cancelPayload() {
+    this.payloadDialogVisible = false;
+    this.payloadDraft = this.data.payload.code;
+    this.payloadLanguageDraft = this.data.payload.language
+  }
+
   savePayload() {
     this.data.payload = { code: this.payloadDraft, language: this.payloadLanguageDraft };
     this.payloadDraft = this.data.payload.code;
     this.payloadLanguageDraft = this.data.payload.language;
     this.payloadDialogVisible = false;
+    this.data.propertyChange('payload', this.data.payload);
+  }
+
+  saveLabel() {
+    this.data.label = this.labelDraft
+    this.data.propertyChange('label', this.data.label);
   }
 }
