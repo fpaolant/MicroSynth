@@ -128,7 +128,9 @@ export class ProjectService {
     // Rimuovi se già presente (per evitare duplicati)
     recentProjects = recentProjects.filter(p => p.id !== project.id);
   
-    const minimalProject = { id: project.id, name: project.name };
+    const minimalProject = { id: project.id, name: project.name,
+        diagrams: project.diagrams.map((d) => { return { id: d.id} })
+     };
     // Aggiungi in cima
     recentProjects.unshift(minimalProject);
   
