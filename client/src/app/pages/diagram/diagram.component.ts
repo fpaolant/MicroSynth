@@ -1,8 +1,6 @@
 import { CommonModule } from "@angular/common";
 import {
-  AfterViewInit,
   Component,
-  ElementRef,
   inject,
   Injector,
   OnInit,
@@ -24,6 +22,7 @@ import {
   DiagramNode,
   DiagramService,
 } from "../../services/diagram.service";
+import { ToastModule } from "primeng/toast";
 
 @Component({
   selector: "app-diagram",
@@ -34,11 +33,13 @@ import {
     ButtonModule,
     EditorComponent,
     SplitterModule,
+    ToastModule
   ],
+  providers: [MessageService],
   templateUrl: "./diagram.component.html",
   styleUrl: "./diagram.component.scss",
 })
-export class DiagramPage implements OnInit, AfterViewInit {
+export class DiagramPage implements OnInit {
   @ViewChild("editor") editor!: EditorComponent;
 
   projectService = inject(ProjectService);
@@ -71,14 +72,6 @@ export class DiagramPage implements OnInit, AfterViewInit {
     if (state.project) {
       this.loadProject(state.project.id);
     }
-  }
-
-  ngAfterViewInit(): void {
-    // const el = this.container.nativeElement;
-    // console.log('Container Element:', el);
-    // if (el) {
-    //   createEditor(el, this.injector);
-    // }
   }
 
   loadProject(id: string) {
@@ -130,22 +123,28 @@ export class DiagramPage implements OnInit, AfterViewInit {
     // Handle area events change
     switch (event.type) {
       case "nodepicked":
-        console.log("Node clicked:", event.data);
+        //console.log("Node clicked:", event.data);
         break;
     }
   }
 
   // editor area handlers
   onEditorAreaCleared(event: any) {
-    
+    // handler
   }
 
   onSave($event: any) {
-    console.log("Saving project:", this.project);
-    console.log("Saving diagram:", this.diagram);
-    console.log("Save clicked", $event);
-
-    const parsedData = JSON.parse($event);
+     let parsedData: any;
+    try {
+      parsedData = JSON.parse($event);
+    } catch (e) {
+      console.error("Error on parsing graph JSON", e);
+      this.messageService.add({
+        severity: "error",
+        summary: "Error",
+        detail: "Failed to save diagram",
+      });
+    }
 
     const diagramNodes: DiagramNode[] = parsedData.nodes.map((node: any) => ({
       id: node.id,
@@ -182,7 +181,7 @@ export class DiagramPage implements OnInit, AfterViewInit {
     };
 
     /*
-    
+      Save diagram to endpoint
     */
     this.diagramService
       .updateDiagram(this.project!.id, this.diagram!)
