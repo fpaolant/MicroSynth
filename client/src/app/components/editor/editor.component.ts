@@ -38,7 +38,6 @@ import { CustomSocketComponent } from "./custom-socket/custom-socket.component";
 import { CustomConnectionComponent } from './custom-connection/custom-connection.component';
 import { CustomNodeComponent } from './custom-node/custom-node.component';
 
-import { ContextMenuPlugin, Presets as ContextMenuPresets } from "rete-context-menu-plugin";
 import { UniPortConnector } from './util/uniport-connector';
 import { Connection, Node, Socket } from './presets';
 import { ComputedSocketPosition } from './util/util';

@@ -1,7 +1,6 @@
 import { BaseSchemes, GetSchemes } from "rete";
 import { Connection, Node } from "./presets";
 import { AngularArea2D } from "rete-angular-plugin/19";
-import { ContextMenuExtra } from "rete-context-menu-plugin";
 import { MinimapExtra } from "rete-minimap-plugin";
 
 export type Schemes = GetSchemes<
@@ -14,7 +13,7 @@ export type Requires<Schemes extends BaseSchemes> =
 
 export type ExpectedScheme = GetSchemes<BaseSchemes['Node'] & { width: number, height: number }, BaseSchemes['Connection']>
 
-export type AreaExtra = AngularArea2D<Schemes> | MinimapExtra | ContextMenuExtra;
+export type AreaExtra = AngularArea2D<Schemes> | MinimapExtra;
 
 export type Position = { x: number, y: number }
 export type Shape = 'ellipse' | 'circle' | 'rect'
