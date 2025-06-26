@@ -25,5 +25,5 @@ Follow these simple steps to run the project locally:
    http://localhost
 
 5. SignIn with default admin credentials (change later)
-    - `u: admin
-    - `p: 12345
+    - u: admin
+    - p: 12345
