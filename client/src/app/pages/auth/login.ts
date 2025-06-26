@@ -87,7 +87,7 @@ export class Login implements OnInit {
         this.authService.login(credentials).subscribe(
             (response) => {
                 this.showMessage('success', 'Login succesful', 'Success');
-                this.router.navigate([this.returnUrl]);
+                this.router.navigate([this.returnUrl], { replaceUrl: true });
             },
             (error) => {
                 this.showMessage('error', 'Error during login', 'Error');

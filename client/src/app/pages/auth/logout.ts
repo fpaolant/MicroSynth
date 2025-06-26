@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
     router = inject(Router);
   
     ngOnInit(): void {
-      this.authService.logout(); // Esegui il logout
-        this.router.navigate(['/auth/login']); // Reindirizza alla pagina di login
+      this.authService.logout();
+        this.router.navigate(['/auth/login'], { replaceUrl: true });
     }
   }
