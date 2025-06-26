@@ -1,7 +1,5 @@
 # MicroSynth #
 
-# MicroSynth
-
 MicroSynth is a web based app written in Angular2+, Spring Boot, Mongo DB.
 
 ## Fast run
