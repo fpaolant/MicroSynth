@@ -12,6 +12,7 @@ import { DividerModule } from 'primeng/divider';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { AppLogo } from '../../layout/component/app.logo';
+import { finalize } from 'rxjs';
 
 @Component({
     selector: 'app-login',
@@ -84,19 +85,19 @@ export class Login implements OnInit {
     onLogin() {
         const credentials = { username: this.username, password: this.password };
         this.actionsDisabled = true;
-        this.authService.login(credentials).subscribe(
+        this.authService.login(credentials)
+        .pipe(
+            finalize(() => this.actionsDisabled = false)
+        )
+        .subscribe(
             (response) => {
                 this.showMessage('success', 'Login succesful', 'Success');
                 this.router.navigate([this.returnUrl], { replaceUrl: true });
             },
             (error) => {
                 this.showMessage('error', 'Error during login', 'Error');
-            },
-            () => {
-                this.actionsDisabled = false
             }
         );      
-
     }
 
     showMessage(severity: string='success', message: string='Message Content', summary: string='Success Message') {
