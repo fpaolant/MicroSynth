@@ -1,11 +1,12 @@
 <p-toolbar>
     <ng-template #start>
-        <p-button icon="pi pi-plus" class="mr-2" text severity="secondary"  (onClick)="addNode()"
-        pTooltip="add node" tooltipPosition="top"/>
-        <p-button icon="pi pi-times" class="mr-2" text severity="secondary" (onClick)="clear()" [disabled]="false"
-        pTooltip="clear" tooltipPosition="top"/>
-        <p-button icon="pi pi-th-large" text severity="secondary" (onClick)="reorder()" 
-        pTooltip="arrange nodes and connections" tooltipPosition="top"/>
+        <p-buttongroup>
+            <p-button label="Add" icon="pi pi-plus" class="mr-2" text severity="secondary"  (onClick)="addNode()" />
+            <p-button label="Clear" icon="pi pi-times" class="mr-2" text severity="secondary" (onClick)="clear()" [disabled]="false" />
+            <p-button label="Arrange" icon="pi pi-th-large" text severity="secondary" (onClick)="reorder()" />
+        </p-buttongroup>
+        
+        
         <!-- <p-dropdown 
             [options]="shapes"
             placeholder="Select a shape"
@@ -19,9 +20,7 @@
         </p-dropdown> -->
     </ng-template>
 
-    <ng-template #center>
-        {{title}}
-    </ng-template>
+    <ng-template #center></ng-template>
 
     <ng-template #end>
         <p-button class="mr-2" icon="pi pi-upload" severity="secondary" (onClick)="download()" 

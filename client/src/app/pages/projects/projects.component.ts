@@ -71,7 +71,6 @@ export class ProjectsPage implements OnInit {
   }
 
   selectProject(id:string) {
-    console.log('Selected project:', id);
     this.routerService.navigate(['/pages/project', id]);
   }
 

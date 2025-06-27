@@ -23,6 +23,8 @@ import {
   DiagramService,
 } from "../../services/diagram.service";
 import { ToastModule } from "primeng/toast";
+import { InputGroupAddon } from "primeng/inputgroupaddon";
+import { InputGroupModule } from "primeng/inputgroup";
 
 @Component({
   selector: "app-diagram",
@@ -33,7 +35,9 @@ import { ToastModule } from "primeng/toast";
     ButtonModule,
     EditorComponent,
     SplitterModule,
-    ToastModule
+    ToastModule,
+    InputGroupAddon,
+    InputGroupModule
   ],
   providers: [MessageService],
   templateUrl: "./diagram.component.html",
@@ -42,18 +46,27 @@ import { ToastModule } from "primeng/toast";
 export class DiagramPage implements OnInit {
   @ViewChild("editor") editor!: EditorComponent;
 
+  // services
   projectService = inject(ProjectService);
   diagramService = inject(DiagramService);
   messageService = inject(MessageService);
 
+  // breadcrumbs
   items = signal<MenuItem[]>([]);
 
+  // objects
   project: Project | null = null;
   diagram: Diagram | null = null;
 
+  // flags
   diagramTouched: boolean = false;
-
+  changeName:boolean = false;
+  
+  // srafts
   diagramDataDraft: DiagramData = { nodes: [], connections: [] };
+  nameDraft:string = '';
+  
+
 
   constructor(
     private route: ActivatedRoute,
@@ -94,11 +107,13 @@ export class DiagramPage implements OnInit {
           { label: this.diagram?.name },
         ]);
 
+        this.nameDraft= this.diagram.name;
+
         // load diagram (empty or not)
         this.loadDiagram();
       },
       error: (error) => {
-        console.error("Error fetching project:", error);
+        console.error("Error fetching diagram:", error);
         this.messageService.add({
           severity: "error",
           summary: "Error",
@@ -134,7 +149,7 @@ export class DiagramPage implements OnInit {
   }
 
   onSave($event: any) {
-     let parsedData: any;
+    let parsedData: any;
     try {
       parsedData = JSON.parse($event);
     } catch (e) {
@@ -187,7 +202,6 @@ export class DiagramPage implements OnInit {
       .updateDiagram(this.project!.id, this.diagram!)
       .subscribe({
         next: (response) => {
-          console.log("Diagram updated successfully:", response);
           this.diagram!.id = response.id;
 
           this.messageService.add({
@@ -206,4 +220,58 @@ export class DiagramPage implements OnInit {
         },
       });
   }
+
+  onNameChange($event: string) {
+    if(this.diagram?.id === null) {
+      // new diagram
+      this.diagram.name = $event;
+      this.changeName = false;
+      this.updateBreadcrumb(this.diagram.name);
+      return;
+    }
+
+    const oldName = this.diagram?.name;
+    this.diagram!.name = $event;
+
+    this.diagramService
+      .updateDiagram(this.project!.id, this.diagram!)
+      .subscribe({
+        next: (response) => {
+          // update breadcrumb
+          this.updateBreadcrumb($event)
+          this.changeName = false;
+        },
+        error: (error) => {
+          console.error("Error updating title:", error);
+          this.diagram!.name = oldName ?? "New Graph";
+          this.messageService.add({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to save title",
+          });
+        },
+      });
+  }
+
+  onCancelName() {
+    this.nameDraft = this.diagram!.name;
+    this.changeName = false;
+  }
+
+  private updateBreadcrumb(name: string) {
+    // update breadcrumb
+    this.items.update((items: MenuItem[]) => {
+      const last = items.pop();
+      if (last) {
+        last.label = name;
+        return [
+          ...items,
+          last
+        ];
+      }
+      return items;
+    });
+  }
+
 }
+

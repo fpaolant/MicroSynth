@@ -75,5 +75,17 @@ export class DiagramService {
 
     return this.http.put<BaseDocument>(`${this.baseUrl}/${projectId}`, diagram, {headers});
   }
+
+  deleteDiagram(projectId: string, diagramId: string): Observable<string> {
+    const headers = new HttpHeaders({ 
+      'Content-Type': 'application/json',
+      'Use-Auth': 'true'
+    });
+
+    return this.http.delete<string>(`${this.baseUrl}/${projectId}/${diagramId}`, {
+      headers,
+      responseType: 'text' as 'json'
+    });
+  }
  
 }

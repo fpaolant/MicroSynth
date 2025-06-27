@@ -15,6 +15,17 @@
 </p-breadcrumb>
 
 <div class="card">
+  <div class="font-semibold text-xl mb-4" (click)="changeName=true" *ngIf="!changeName">{{diagram?.name}}</div>
+  <div class="my-4">
+    <!-- <p-button [label]="diagram?.name" text (click)="changeName=true" *ngIf="!changeName"/> -->
+    <p-inputgroup *ngIf="changeName">
+        <input pInputText [value]="nameDraft" class="w-[25rem]" #nameInputText />
+        <p-inputgroup-addon>
+            <button pButton icon="pi pi-save" (click)="onNameChange(nameInputText.value);"></button>
+            <button pButton icon="pi pi-times" (click)="onCancelName()"></button>
+        </p-inputgroup-addon>
+      </p-inputgroup>
+    </div>
   <p-splitter [panelSizes]="[80, 20]" [minSizes]="[80, 20]">
     <ng-template #panel>
       <div class="h-full w-full p-6">

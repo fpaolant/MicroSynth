@@ -170,4 +170,5 @@ export class CustomNodeComponent implements OnInit, OnChanges {
     this.data.label = this.labelDraft
     this.data.propertyChange('label', this.data.label);
   }
+  
 }

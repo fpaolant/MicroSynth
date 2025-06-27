@@ -57,8 +57,7 @@ import { ToastModule } from 'primeng/toast';
 import { forkJoin, from, Observable, of } from 'rxjs';
 import { finalize, switchMap, take } from 'rxjs/operators';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-
-
+import { ButtonGroupModule } from 'primeng/buttongroup';
 
 
 
@@ -69,7 +68,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 @Component({
   selector: 'app-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, ToolbarModule, ButtonModule, IconFieldModule, InputIconModule, 
+  imports: [CommonModule, FormsModule, ToolbarModule, ButtonModule, IconFieldModule, InputIconModule, ButtonGroupModule,
     SplitButtonModule, DropdownModule, TooltipModule, UploadFileDialogComponent, ToastModule, ConfirmDialogModule],
   providers: [MessageService, ConfirmationService],
   templateUrl: './editor.component.html',
@@ -101,7 +100,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
     return this._diagram;
   }
 
-  @Input() title:string|undefined = ''; 
+  @Input() title:string|undefined = '';
 
   @Output() editorEventsChange = new EventEmitter<any>();
   @Output() areaEventsChange = new EventEmitter<any>();
