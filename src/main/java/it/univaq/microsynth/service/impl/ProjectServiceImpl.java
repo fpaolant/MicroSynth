@@ -114,4 +114,28 @@ public class ProjectServiceImpl implements ProjectService {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @Override
+    public ResponseEntity<?> deleteDiagram(String projectId, String diagramId) {
+        log.info("Deleting diagram {} from project {}", diagramId, projectId);
+        return projectRepository.findById(projectId)
+                .map(project -> {
+                    Optional<Diagram> diagramToDelete = project.getDiagrams().stream()
+                            .filter(diagram -> diagram.getId().equals(diagramId))
+                            .findFirst();
+
+                    if (diagramToDelete.isPresent()) {
+                        project.getDiagrams().remove(diagramToDelete.get());
+                        projectRepository.save(project);
+                        log.info("Deleted diagram {} from project {}", diagramId, projectId);
+                        return ResponseEntity.ok("Diagram deleted successfully");
+                    } else {
+                        log.warn("Diagram {} not found in project {}", diagramId, projectId);
+                        return ResponseEntity.notFound().build();
+                    }
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+
 }

@@ -9,6 +9,7 @@ import it.univaq.microsynth.domain.dto.DocumentResponseDTO;
 import it.univaq.microsynth.service.ProjectService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,5 +42,22 @@ public class DiagramController {
         return projectService.updateDiagram(projectId, diagramDTO);
     }
 
+    /**
+     * Delete a diagram for a project
+     * @param projectId project id
+     * @param diagramId diagram id
+     * @return
+     */
+    @Operation(summary = "Delete project diagram", description = "return status of deletion")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "success"),
+            @ApiResponse(responseCode = "404", description = "diagram not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server Error")
+    })
+    @DeleteMapping("/{project_id}/{diagram_id}")
+    public ResponseEntity<?> deleteDiagram(@PathVariable("project_id") String projectId,
+                                           @PathVariable("diagram_id") String diagramId) {
+        return projectService.deleteDiagram(projectId, diagramId);
+    }
 
 }

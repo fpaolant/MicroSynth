@@ -22,4 +22,6 @@ public interface ProjectService {
     ResponseEntity<DocumentResponseDTO> createProject(ProjectDTO projectDTO, String userName);
 
     ResponseEntity<?> deleteProject(String id);
+
+    ResponseEntity<?> deleteDiagram(String projectId, String diagramId);
 }
