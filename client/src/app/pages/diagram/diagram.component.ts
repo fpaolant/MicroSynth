@@ -62,7 +62,7 @@ export class DiagramPage implements OnInit {
   diagramTouched: boolean = false;
   changeName:boolean = false;
   
-  // srafts
+  // drafts
   diagramDataDraft: DiagramData = { nodes: [], connections: [] };
   nameDraft:string = '';
   

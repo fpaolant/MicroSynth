@@ -11,10 +11,12 @@ import { Diagram, DiagramService } from '../../services/diagram.service';
 import { ToastModule } from 'primeng/toast';
 import { MessagesModule } from 'primeng/messages';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { InputGroupModule } from 'primeng/inputgroup';
 
 @Component({
   selector: 'app-project',
-  imports: [CommonModule, RouterModule, BreadcrumbModule, DataViewModule, ButtonModule, AppLogo, ToastModule, MessagesModule, ConfirmDialogModule],
+  imports: [CommonModule, RouterModule, BreadcrumbModule, DataViewModule, ButtonModule, AppLogo, ToastModule, MessagesModule, ConfirmDialogModule, InputGroupAddonModule, InputGroupModule],
   providers: [ConfirmationService, MessageService],
   standalone: true,
   templateUrl: './project.component.html',
@@ -32,6 +34,12 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
   project = signal<Project | null>(null);
 
   items = signal<MenuItem[]>([]);
+
+  // flags
+  changeName:boolean = false;
+    
+  // drafts
+  nameDraft:string = '';
 
   constructor(private route: ActivatedRoute) {
     this.items.set([{ icon: 'pi pi-home', route: '/' }, { label: 'Projects', route: '/pages/projects' }]);
@@ -62,6 +70,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
         ]);
         // Imposta il progetto caricato
         this.project.set(project);
+        this.nameDraft = project.name
       },
       error: (error) => {
         console.error('Error loading project:', error);
@@ -95,4 +104,56 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
       })
     });
   }
+
+
+  onNameChange($event: string) {
+    const currentProject = this.project();
+    if(currentProject === null) return;
+    const oldName = currentProject.name;
+    currentProject.name = $event;
+
+    this.projectService.updateProject(currentProject).subscribe({
+      next: (updatedProject) => {
+        // update breadcrumb
+        this.project.set(currentProject);
+
+        this.updateBreadcrumb($event)
+        this.changeName = false;
+      },
+      error: (error) => {
+        console.error("Error updating name:", error);
+        this.project()!.name = oldName;
+        this.messageService.add({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to save name",
+        });
+      },
+    });
+
+    
+  }
+
+  onCancelName() {
+    this.nameDraft = this.project!.name;
+    this.changeName = false;
+  }
+
+  private updateBreadcrumb(name: string) {
+    // update breadcrumb
+    this.items.update((items: MenuItem[]) => {
+      const last = items.pop();
+      if (last) {
+        last.label = name;
+        return [
+          ...items,
+          last
+        ];
+      }
+      return items;
+    });
+  }
+
+
+
 }
