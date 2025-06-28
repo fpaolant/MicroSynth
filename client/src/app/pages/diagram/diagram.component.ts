@@ -135,12 +135,6 @@ export class DiagramPage implements OnInit {
 
   onAreaEventsChange(event: any) {
     this.diagramTouched = true;
-    // Handle area events change
-    switch (event.type) {
-      case "nodepicked":
-        //console.log("Node clicked:", event.data);
-        break;
-    }
   }
 
   // editor area handlers
@@ -149,9 +143,9 @@ export class DiagramPage implements OnInit {
   }
 
   onSave($event: any) {
-    let parsedData: any;
+    let diagramData: any;
     try {
-      parsedData = JSON.parse($event);
+      diagramData = JSON.parse($event);
     } catch (e) {
       console.error("Error on parsing graph JSON", e);
       this.messageService.add({
@@ -160,34 +154,6 @@ export class DiagramPage implements OnInit {
         detail: "Failed to save diagram",
       });
     }
-
-    const diagramNodes: DiagramNode[] = parsedData.nodes.map((node: any) => ({
-      id: node.id,
-      label: node.label,
-      shape: node.shape,
-      payload: { code: node.payload.code, language: node.payload.language },
-      weight: node.weight,
-    }));
-
-    const diagramConnections: DiagramConnection[] = parsedData.connections.map(
-      (connection: any) => ({
-        id: connection.id,
-        source: connection.source,
-        target: connection.target,
-        isLoop: connection.isLoop,
-        weight: connection.weight,
-        label: connection.label,
-        payload: {
-          code: connection.payload.code,
-          language: connection.payload.language,
-        },
-      })
-    );
-
-    const diagramData: DiagramData = {
-      nodes: diagramNodes,
-      connections: diagramConnections,
-    };
 
     this.diagram = {
       id: this.diagram?.id || "",
@@ -219,6 +185,45 @@ export class DiagramPage implements OnInit {
           });
         },
       });
+  }
+
+  exportFormatHandler(json: string) {
+    let parsedData: any;
+    try {
+      parsedData = JSON.parse(json);
+    } catch (e) {
+      console.error("Error on parsing graph JSON", e);
+    }
+
+    const diagramNodes: DiagramNode[] = parsedData.nodes.map((node: any) => ({
+      id: node.id,
+      label: node.label,
+      shape: node.shape,
+      payload: { code: node.payload.code, language: node.payload.language },
+      weight: node.weight,
+    }));
+
+    const diagramConnections: DiagramConnection[] = parsedData.connections.map(
+      (connection: any) => ({
+        id: connection.id,
+        source: connection.source,
+        target: connection.target,
+        isLoop: connection.isLoop,
+        weight: connection.weight,
+        label: connection.label,
+        payload: {
+          code: connection.payload.code,
+          language: connection.payload.language,
+        },
+      })
+    );
+
+    const diagramData: DiagramData = {
+      nodes: diagramNodes,
+      connections: diagramConnections,
+    };
+
+    return JSON.stringify(diagramData, null, 2);
   }
 
   onNameChange($event: string) {

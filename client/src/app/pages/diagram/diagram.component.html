@@ -35,6 +35,7 @@
           [diagram]="diagramDataDraft"
           (editorAreaCleared)="onEditorAreaCleared($event)"
           (onSave)="onSave($event)"
+          [exportFormatHandler]="exportFormatHandler"
         ></app-editor>
       </div>
     </ng-template>

@@ -100,6 +100,8 @@ export class EditorComponent implements OnInit, AfterViewInit {
     return this._diagram;
   }
 
+  @Input() exportFormatHandler: ((json: string) => string) | null = null;
+
   @Input() title:string|undefined = '';
 
   @Output() editorEventsChange = new EventEmitter<any>();
@@ -512,12 +514,6 @@ export class EditorComponent implements OnInit, AfterViewInit {
       this.area.update('node', node.id)
     });
   }
-  
-  exportAsJson() {
-    const nodes = this.editor.getNodes();
-    const connections = this.editor.getConnections();
-    return JSON.stringify({ nodes, connections }, null, 2);
-  }
 
   save() {
     this.onSave.emit(this.exportAsJson())
@@ -556,8 +552,16 @@ export class EditorComponent implements OnInit, AfterViewInit {
       });
     }
   }
-  
-  onCancelUpload() {}
 
+  private exportAsJson() {
+    const nodes = this.editor.getNodes();
+    const connections = this.editor.getConnections();
+    let json = JSON.stringify({ nodes, connections }, null, 2)
+    if(this.exportFormatHandler !== null) {
+      json = this.exportFormatHandler(json);
+    }
+    return json;
+  }
+  
   
 }
