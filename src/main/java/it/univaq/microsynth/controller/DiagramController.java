@@ -4,9 +4,13 @@ package it.univaq.microsynth.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import it.univaq.microsynth.domain.Diagram;
 import it.univaq.microsynth.domain.dto.DiagramDTO;
 import it.univaq.microsynth.domain.dto.DocumentResponseDTO;
+import it.univaq.microsynth.domain.dto.GenerationParamsDTO;
+import it.univaq.microsynth.service.GeneratorService;
 import it.univaq.microsynth.service.ProjectService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -21,8 +25,11 @@ public class DiagramController {
     private static final Logger log = LoggerFactory.getLogger(ProjectController.class);
     private final ProjectService projectService;
 
-    public DiagramController(ProjectService projectService) {
+    private final GeneratorService generatorService;
+
+    public DiagramController(ProjectService projectService, GeneratorService generatorService) {
         this.projectService = projectService;
+        this.generatorService = generatorService;
     }
 
     /**
@@ -58,6 +65,12 @@ public class DiagramController {
     public ResponseEntity<?> deleteDiagram(@PathVariable("project_id") String projectId,
                                            @PathVariable("diagram_id") String diagramId) {
         return projectService.deleteDiagram(projectId, diagramId);
+    }
+
+    @PostMapping("/generate")
+    public ResponseEntity<Diagram> generate(@RequestBody @Valid GenerationParamsDTO params) {
+        Diagram diagram = generatorService.generate(params);
+        return ResponseEntity.ok(diagram);
     }
 
 }
