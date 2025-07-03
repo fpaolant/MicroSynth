@@ -3,6 +3,7 @@ package it.univaq.microsynth.domain;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.List;
 
 @AllArgsConstructor
@@ -11,7 +12,7 @@ import java.util.List;
 @Setter
 @EqualsAndHashCode
 @ToString
-public class DiagramData {
+public class DiagramData implements Serializable {
     private static final long serialVersionUID = -294424037526113965L;
 
     @NotNull

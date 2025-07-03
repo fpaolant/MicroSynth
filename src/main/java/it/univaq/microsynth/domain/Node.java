@@ -3,13 +3,15 @@ package it.univaq.microsynth.domain;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.io.Serializable;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @EqualsAndHashCode
 @ToString
-public class Node {
+public class Node implements Serializable {
     private static final long serialVersionUID = -8030066578324371602L;
 
     @NotNull

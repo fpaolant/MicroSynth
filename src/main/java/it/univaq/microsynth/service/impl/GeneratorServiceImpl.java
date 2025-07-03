@@ -7,7 +7,6 @@ import it.univaq.microsynth.domain.Node;
 import it.univaq.microsynth.domain.Payload;
 import it.univaq.microsynth.domain.dto.GenerationParamsDTO;
 import it.univaq.microsynth.service.GeneratorService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -35,25 +34,25 @@ public class GeneratorServiceImpl implements GeneratorService {
         List<Connection> connections = new ArrayList<>();
         Random rand = new Random();
 
-        // 1. Crea nodi
+        // 1. Create nodes
         for (int i = 0; i < n; i++) {
             String id = "Service" + i;
             nodes.add(new Node(
                     id,
                     id,
-                    "box",             // forma generica per visualizzazione
-                    new Payload(),     // payload vuoto (da estendere)
-                    1L
+                    "circle",
+                    new Payload(),
+                    0L
             ));
         }
 
-        // 2. Seleziona radici
+        // 2. Select roots
         Set<Integer> rootIndices = new HashSet<>();
         while (rootIndices.size() < r) {
             rootIndices.add(rand.nextInt(n));
         }
 
-        // 3. Genera connessioni
+        // 3. Generate connections
         int maxConnections = n * (n - 1);
         int targetConnections = (int) Math.round(d * maxConnections);
         Set<String> existingEdges = new HashSet<>();
@@ -75,13 +74,13 @@ public class GeneratorServiceImpl implements GeneratorService {
                     "Service" + from,
                     "Service" + to,
                     false,
-                    1L,
+                    0L,
                     "calls",
                     new Payload()
             ));
         }
 
-        // 4. Costruisci il diagramma
+        // 4. Build diagram
         Diagram diagram = new Diagram();
         diagram.setId(UUID.randomUUID().toString());
         diagram.setName("Generated Diagram");
