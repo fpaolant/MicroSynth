@@ -8,13 +8,22 @@ import it.univaq.microsynth.domain.Payload;
 import it.univaq.microsynth.domain.dto.GenerationParamsDTO;
 import it.univaq.microsynth.service.GeneratorService;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Service
 public class GeneratorServiceImpl implements GeneratorService {
@@ -37,11 +46,12 @@ public class GeneratorServiceImpl implements GeneratorService {
         // 1. Create nodes
         for (int i = 0; i < n; i++) {
             String id = "Service" + i;
+
             nodes.add(new Node(
                     id,
                     id,
                     "circle",
-                    new Payload(),
+                    this.generateRandomPayload(),
                     0L
             ));
         }
@@ -89,28 +99,185 @@ public class GeneratorServiceImpl implements GeneratorService {
         return diagram;
     }
 
-    public String exportDockerCompose(Diagram diagram) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("version: '3.8'\n");
-        sb.append("services:\n");
+    @Override
+    public String exportDockerCompose(Diagram diagram) throws IOException {
+        StringBuilder servicesSection = new StringBuilder();
 
         for (Node node : diagram.getData().getNodes()) {
             String serviceName = node.getId().toLowerCase();
-            sb.append("  ").append(serviceName).append(":\n");
-            sb.append("    image: openjdk:17\n");
-            sb.append("    container_name: ").append(serviceName).append("\n");
-            sb.append("    ports:\n");
-            sb.append("      - \"").append(8000 + node.getId().hashCode() % 1000).append(":8080\"\n"); // porta fittizia
-            sb.append("    networks:\n");
-            sb.append("      - microsynth-net\n");
+            Payload payload = node.getPayload();
+            String image = getDockerImageFromPayload(payload);
+            int internalPort = getExposedPortFromPayload(payload);
+            int externalPort = 8000 + Math.abs(serviceName.hashCode() % 1000);
+
+            servicesSection.append("  ").append(serviceName).append(":\n");
+            servicesSection.append("    image: ").append(image).append("\n");
+            servicesSection.append("    container_name: ").append(serviceName).append("\n");
+            servicesSection.append("    ports:\n");
+            servicesSection.append("      - \"").append(externalPort).append(":").append(internalPort).append("\"\n");
+            servicesSection.append("    networks:\n");
+            servicesSection.append("      - microsynth-net\n\n");
         }
 
-        sb.append("\nnetworks:\n");
-        sb.append("  microsynth-net:\n");
-        sb.append("    driver: bridge\n");
+        // Carica il template dal classpath
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("templates/docker/docker-compose.tpl")) {
+            if (is == null) throw new FileNotFoundException("Template not found: templates/docker/docker-compose.tpl");
 
-        return sb.toString();
+            String template = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            return template.replace("{{services}}", servicesSection.toString());
+        }
     }
+
+    @Override
+    public ByteArrayOutputStream exportDockerComposeFull(Diagram diagram) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ZipOutputStream zos = new ZipOutputStream(baos);
+
+        // 1. Add docker-compose.yml
+        String dockerCompose = exportDockerCompose(diagram);
+        zos.putNextEntry(new ZipEntry("docker-compose.yml"));
+        zos.write(dockerCompose.getBytes(StandardCharsets.UTF_8));
+        zos.closeEntry();
+
+        // 2. Add microservices with Dockerfile and code
+        for (Node node : diagram.getData().getNodes()) {
+            String serviceName = node.getId().toLowerCase();
+            String folder = serviceName + "/";
+
+            // 2.1. Dockerfile
+            String dockerfile = generateDockerfileFromTemplate(node.getPayload());
+            zos.putNextEntry(new ZipEntry(folder + "Dockerfile"));
+            zos.write(dockerfile.getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+
+            // 2.2. Main file (e.g. Main.java, main.py, index.js)
+            String filename = mainFilename(node.getPayload().getLanguage());
+            zos.putNextEntry(new ZipEntry(folder + filename));
+            zos.write(node.getPayload().getCode().getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+        }
+
+        zos.close();
+        return baos;
+    }
+
+    /**
+     * Return ImageName
+     * @param payload
+     * @return
+     */
+    private String getDockerImageFromPayload(Payload payload) {
+        if (payload == null) return "alpine";
+
+        return switch (payload.getLanguage().toLowerCase()) {
+            case "java" -> "openjdk:17";
+            case "python" -> "python:3.11";
+            case "javascript", "node" -> "node:20";
+            default -> "alpine";
+        };
+    }
+
+    private int getExposedPortFromPayload(Payload payload) {
+        if (payload == null) return 8080;
+
+        return switch (payload.getLanguage().toLowerCase()) {
+            case "java" -> 8080;
+            case "python" -> 5000;
+            case "javascript", "node" -> 3000;
+            default -> 8080;
+        };
+    }
+
+    private String generateDockerfileFromTemplate(Payload payload) throws IOException {
+        String language = payload.getLanguage().toLowerCase();
+        String templatePath = "templates/docker/" + language + ".dockerfile.tpl";
+
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(templatePath)) {
+            if (is == null) throw new FileNotFoundException("Template not found: " + templatePath);
+
+            String template = StreamUtils.copyToString(is, StandardCharsets.UTF_8);
+
+            Map<String, String> vars = switch (language) {
+                case "java" -> Map.of(
+                        "main_file", "Main.java",
+                        "main_class", "Main"
+                );
+                case "python" -> Map.of(
+                        "main_file", "main.py"
+                );
+                case "javascript", "node" -> Map.of(
+                        "main_file", "index.js"
+                );
+                default -> Map.of();
+            };
+
+            return interpolate(template, vars);
+        }
+    }
+
+    private String interpolate(String template, Map<String, String> vars) {
+        for (Map.Entry<String, String> entry : vars.entrySet()) {
+            template = template.replace("{{" + entry.getKey() + "}}", entry.getValue());
+        }
+        return template;
+    }
+
+    private String mainFilename(String language) {
+        return switch (language.toLowerCase()) {
+            case "java" -> "Main.java";
+            case "python" -> "main.py";
+            case "javascript", "node" -> "index.js";
+            default -> "main.txt";
+        };
+    }
+
+    private Payload generateRandomPayload() {
+        Payload payload = new Payload();
+        Random rand = new Random();
+
+        String[] languages = {"java", "python", "javascript"};
+        String chosen = languages[rand.nextInt(languages.length)];
+        payload.setLanguage(chosen);
+
+        String code;
+        switch (chosen) {
+            case "java":
+                code = """
+                   public class Main {
+                       public static void main(String[] args) {
+                           System.out.println("Hello from Java!");
+                       }
+                   }
+                   """;
+                break;
+            case "python":
+                code = """
+                   def main():
+                       print("Hello from Python!")
+
+                   if __name__ == "__main__":
+                       main()
+                   """;
+                break;
+            case "javascript":
+                code = """
+                   function main() {
+                       console.log("Hello from JavaScript!");
+                   }
+
+                   main();
+                   """;
+                break;
+            default:
+                code = "// No code";
+        }
+
+        payload.setCode(code);
+        return payload;
+    }
+
+
+
 
 
 }

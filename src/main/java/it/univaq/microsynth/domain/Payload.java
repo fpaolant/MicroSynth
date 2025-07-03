@@ -17,5 +17,5 @@ public class Payload implements Serializable {
     private String code = "";
 
     @NotNull
-    private String language = "json";
+    private String language = "javascript";
 }

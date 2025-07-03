@@ -18,9 +18,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 
@@ -95,7 +98,7 @@ public class DiagramController {
      * @return InputStreamResource file stream yaml of docker compose
      */
     @PostMapping("/export/compose")
-    public ResponseEntity<InputStreamResource> exportDockerCompose(@RequestBody GenerationParamsDTO params) {
+    public ResponseEntity<InputStreamResource> exportDockerCompose(@RequestBody GenerationParamsDTO params) throws IOException {
         Diagram diagram = generatorService.generate(params);
         String yaml = generatorService.exportDockerCompose(diagram);
 
@@ -109,6 +112,35 @@ public class DiagramController {
                 .contentLength(yaml.length())
                 .contentType(MediaType.parseMediaType("application/x-yaml"))
                 .body(new InputStreamResource(stream));
+    }
+
+    /**
+     * Export docker compose FULL for a given diagram
+     * @param diagram Diagram
+     * @return InputStreamResource file stream yaml of docker compose
+     * microsynth.zip
+     * ├── docker-compose.yml
+     * ├── service0/
+     * │   ├── Dockerfile
+     * │   └── main.py
+     * ├── service1/
+     * │   ├── Dockerfile
+     * │   └── Main.java
+     * ...
+     */
+    @PostMapping("/export/composefull")
+    public ResponseEntity<InputStreamResource> exportDockerComposeFull(@RequestBody @Nullable Diagram diagram) throws IOException {
+        if(diagram == null) diagram = this.generatorService.generate(new GenerationParamsDTO(3,1,0.5));
+        ByteArrayOutputStream zipStream = generatorService.exportDockerComposeFull(diagram);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=microsynth.zip");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentLength(zipStream.size())
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(new InputStreamResource(new ByteArrayInputStream(zipStream.toByteArray())));
     }
 
 }
