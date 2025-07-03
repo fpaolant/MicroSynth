@@ -119,7 +119,7 @@ public class GeneratorServiceImpl implements GeneratorService {
             servicesSection.append("      - microsynth-net\n\n");
         }
 
-        // Carica il template dal classpath
+        // Load Docker compose template
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("templates/docker/docker-compose.tpl")) {
             if (is == null) throw new FileNotFoundException("Template not found: templates/docker/docker-compose.tpl");
 
@@ -163,8 +163,8 @@ public class GeneratorServiceImpl implements GeneratorService {
 
     /**
      * Return ImageName
-     * @param payload
-     * @return
+     * @param payload conntaining language and code
+     * @return String of imagename
      */
     private String getDockerImageFromPayload(Payload payload) {
         if (payload == null) return "alpine";
@@ -239,38 +239,30 @@ public class GeneratorServiceImpl implements GeneratorService {
         String chosen = languages[rand.nextInt(languages.length)];
         payload.setLanguage(chosen);
 
-        String code;
-        switch (chosen) {
-            case "java":
-                code = """
-                   public class Main {
-                       public static void main(String[] args) {
-                           System.out.println("Hello from Java!");
-                       }
-                   }
-                   """;
-                break;
-            case "python":
-                code = """
-                   def main():
-                       print("Hello from Python!")
+        String code = switch (chosen) {
+            case "java" -> """
+                    public class Main {
+                        public static void main(String[] args) {
+                            System.out.println("Hello from Java!");
+                        }
+                    }
+                    """;
+            case "python" -> """
+                    def main():
+                        print("Hello from Python!")
 
-                   if __name__ == "__main__":
-                       main()
-                   """;
-                break;
-            case "javascript":
-                code = """
-                   function main() {
-                       console.log("Hello from JavaScript!");
-                   }
+                    if __name__ == "__main__":
+                        main()
+                    """;
+            case "javascript" -> """
+                    function main() {
+                        console.log("Hello from JavaScript!");
+                    }
 
-                   main();
-                   """;
-                break;
-            default:
-                code = "// No code";
-        }
+                    main();
+                    """;
+            default -> "// No code";
+        };
 
         payload.setCode(code);
         return payload;
