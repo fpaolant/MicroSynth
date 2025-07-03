@@ -88,4 +88,29 @@ public class GeneratorServiceImpl implements GeneratorService {
 
         return diagram;
     }
+
+    public String exportDockerCompose(Diagram diagram) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("version: '3.8'\n");
+        sb.append("services:\n");
+
+        for (Node node : diagram.getData().getNodes()) {
+            String serviceName = node.getId().toLowerCase();
+            sb.append("  ").append(serviceName).append(":\n");
+            sb.append("    image: openjdk:17\n");
+            sb.append("    container_name: ").append(serviceName).append("\n");
+            sb.append("    ports:\n");
+            sb.append("      - \"").append(8000 + node.getId().hashCode() % 1000).append(":8080\"\n"); // porta fittizia
+            sb.append("    networks:\n");
+            sb.append("      - microsynth-net\n");
+        }
+
+        sb.append("\nnetworks:\n");
+        sb.append("  microsynth-net:\n");
+        sb.append("    driver: bridge\n");
+
+        return sb.toString();
+    }
+
+
 }

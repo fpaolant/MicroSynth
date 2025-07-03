@@ -8,4 +8,5 @@ import it.univaq.microsynth.domain.dto.GenerationParamsDTO;
 public interface GeneratorService {
 
     Diagram generate(GenerationParamsDTO params);
+    String exportDockerCompose(Diagram diagram);
 }

@@ -13,9 +13,15 @@ import it.univaq.microsynth.service.ProjectService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 
 
 @RestController
@@ -67,10 +73,42 @@ public class DiagramController {
         return projectService.deleteDiagram(projectId, diagramId);
     }
 
+    /**
+     * Generate a diagram for a project
+     * @param params GenerationParamsDTO
+     * @return Diagram
+     */
+    @Operation(summary = "Generate a diagram", description = "return diagram")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "success"),
+            @ApiResponse(responseCode = "500", description = "Internal server Error")
+    })
     @PostMapping("/generate")
     public ResponseEntity<Diagram> generate(@RequestBody @Valid GenerationParamsDTO params) {
         Diagram diagram = generatorService.generate(params);
         return ResponseEntity.ok(diagram);
+    }
+
+    /**
+     * Export docker compose for a given diagram
+     * @param params GenerationParamsDTO
+     * @return InputStreamResource file stream yaml of docker compose
+     */
+    @PostMapping("/export/compose")
+    public ResponseEntity<InputStreamResource> exportDockerCompose(@RequestBody GenerationParamsDTO params) {
+        Diagram diagram = generatorService.generate(params);
+        String yaml = generatorService.exportDockerCompose(diagram);
+
+        ByteArrayInputStream stream = new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=docker-compose.yml");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentLength(yaml.length())
+                .contentType(MediaType.parseMediaType("application/x-yaml"))
+                .body(new InputStreamResource(stream));
     }
 
 }
