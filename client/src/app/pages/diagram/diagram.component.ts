@@ -263,6 +263,52 @@ export class DiagramPage implements OnInit {
     this.changeName = false;
   }
 
+  onGenerate($event: any) {
+    this.diagramService.generateDiagram($event).subscribe({
+      next: (res) => {
+        if(res.data) this.diagramDataDraft = res.data;
+        this.messageService.add({
+          severity: "success",
+          summary: "Success",
+          detail: "Diagram generated successfully",
+        });
+      },
+      error: (error) => {
+        console.error("Error generating diagram:", error);
+          this.messageService.add({
+            severity: "error",
+            summary: "Error",
+            detail: "Failed to generate diagram",
+          });
+      }
+
+    });
+  }
+
+  onDockerDownload($event: any) {
+    if(!this.diagram) return;
+    this.diagramService.exportDockerCompose(this.diagram).subscribe({
+      next: (blob: Blob) => {
+        // Crea un oggetto URL temporaneo per il blob
+        const url = window.URL.createObjectURL(blob);
+    
+        // Crea un link temporaneo <a>
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'microsynth.zip';
+        document.body.appendChild(a);
+        a.click(); // forza il download
+        document.body.removeChild(a);
+    
+        // Rilascia l'oggetto URL
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Download error:', err);
+      }
+    });
+  }
+
   private updateBreadcrumb(name: string) {
     // update breadcrumb
     this.items.update((items: MenuItem[]) => {

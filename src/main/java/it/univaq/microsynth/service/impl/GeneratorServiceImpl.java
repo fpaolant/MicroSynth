@@ -30,7 +30,6 @@ public class GeneratorServiceImpl implements GeneratorService {
 
     @Override
     public Diagram generate(GenerationParamsDTO params) {
-
         int n = params.getNodes();
         int r = params.getRoots();
         double d = params.getDensity();
@@ -43,20 +42,22 @@ public class GeneratorServiceImpl implements GeneratorService {
         List<Connection> connections = new ArrayList<>();
         Random rand = new Random();
 
-        // 1. Create nodes
+        // 1. Create nodes with UUIDs as IDs
+        List<String> nodeIds = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            String id = "Service" + i;
+            String id = UUID.randomUUID().toString();
+            nodeIds.add(id);
 
             nodes.add(new Node(
                     id,
-                    id,
+                    "S " + (i + 1),
                     "circle",
                     this.generateRandomPayload(),
                     0L
             ));
         }
 
-        // 2. Select roots
+        // 2. Select roots (by index)
         Set<Integer> rootIndices = new HashSet<>();
         while (rootIndices.size() < r) {
             rootIndices.add(rand.nextInt(n));
@@ -74,15 +75,18 @@ public class GeneratorServiceImpl implements GeneratorService {
             if (from == to) continue;
             if (rootIndices.contains(to)) continue;
 
-            String key = from + "->" + to;
-            if (existingEdges.contains(key)) continue;
+            String edgeKey = from + "->" + to;
+            if (existingEdges.contains(edgeKey)) continue;
 
-            existingEdges.add(key);
+            existingEdges.add(edgeKey);
+
+            String sourceId = nodeIds.get(from);
+            String targetId = nodeIds.get(to);
 
             connections.add(new Connection(
                     UUID.randomUUID().toString(),
-                    "Service" + from,
-                    "Service" + to,
+                    sourceId,
+                    targetId,
                     false,
                     0L,
                     "calls",
@@ -100,48 +104,19 @@ public class GeneratorServiceImpl implements GeneratorService {
     }
 
     @Override
-    public String exportDockerCompose(Diagram diagram) throws IOException {
-        StringBuilder servicesSection = new StringBuilder();
-
-        for (Node node : diagram.getData().getNodes()) {
-            String serviceName = node.getId().toLowerCase();
-            Payload payload = node.getPayload();
-            String image = getDockerImageFromPayload(payload);
-            int internalPort = getExposedPortFromPayload(payload);
-            int externalPort = 8000 + Math.abs(serviceName.hashCode() % 1000);
-
-            servicesSection.append("  ").append(serviceName).append(":\n");
-            servicesSection.append("    image: ").append(image).append("\n");
-            servicesSection.append("    container_name: ").append(serviceName).append("\n");
-            servicesSection.append("    ports:\n");
-            servicesSection.append("      - \"").append(externalPort).append(":").append(internalPort).append("\"\n");
-            servicesSection.append("    networks:\n");
-            servicesSection.append("      - microsynth-net\n\n");
-        }
-
-        // Load Docker compose template
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream("templates/docker/docker-compose.tpl")) {
-            if (is == null) throw new FileNotFoundException("Template not found: templates/docker/docker-compose.tpl");
-
-            String template = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            return template.replace("{{services}}", servicesSection.toString());
-        }
-    }
-
-    @Override
-    public ByteArrayOutputStream exportDockerComposeFull(Diagram diagram) throws IOException {
+    public ByteArrayOutputStream exportDockerCompose(Diagram diagram) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zos = new ZipOutputStream(baos);
 
         // 1. Add docker-compose.yml
-        String dockerCompose = exportDockerCompose(diagram);
+        String dockerCompose = getDockerCompose(diagram);
         zos.putNextEntry(new ZipEntry("docker-compose.yml"));
         zos.write(dockerCompose.getBytes(StandardCharsets.UTF_8));
         zos.closeEntry();
 
         // 2. Add microservices with Dockerfile and code
         for (Node node : diagram.getData().getNodes()) {
-            String serviceName = node.getId().toLowerCase();
+            String serviceName = node.getLabel().toLowerCase().replace(" ", "_");
             String folder = serviceName + "/";
 
             // 2.1. Dockerfile
@@ -161,6 +136,37 @@ public class GeneratorServiceImpl implements GeneratorService {
         return baos;
     }
 
+    private String getDockerCompose(Diagram diagram) throws IOException {
+        StringBuilder servicesSection = new StringBuilder();
+
+        String netName = diagram.getName().toLowerCase().replace(" ", "_") + "-net";
+
+        for (Node node : diagram.getData().getNodes()) {
+            String serviceName = node.getLabel().toLowerCase().replace(" ", "_");
+            Payload payload = node.getPayload();
+            String image = getDockerImageFromPayload(payload);
+            int internalPort = getExposedPortFromPayload(payload);
+            int externalPort = 8000 + Math.abs(serviceName.hashCode() % 1000);
+
+            servicesSection.append("  ").append(serviceName).append(":\n");
+            servicesSection.append("    image: ").append(image).append("\n");
+            servicesSection.append("    container_name: ").append(serviceName).append("\n");
+            servicesSection.append("    ports:\n");
+            servicesSection.append("      - \"").append(externalPort).append(":").append(internalPort).append("\"\n");
+            servicesSection.append("    networks:\n");
+            servicesSection.append("      - ").append(netName).append("\n");
+        }
+
+        // Load Docker compose template
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("templates/docker/docker-compose.tpl")) {
+            if (is == null) throw new FileNotFoundException("Template not found: templates/docker/docker-compose.tpl");
+
+            String template = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            return template.replace("{{services}}", servicesSection.toString())
+                            .replace("{{network_name}}", netName);
+        }
+    }
+
     /**
      * Return ImageName
      * @param payload conntaining language and code
@@ -172,7 +178,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         return switch (payload.getLanguage().toLowerCase()) {
             case "java" -> "openjdk:17";
             case "python" -> "python:3.11";
-            case "javascript", "node" -> "node:20";
+            case "javascript", "node", "typescript" -> "node:20";
             default -> "alpine";
         };
     }
@@ -183,7 +189,7 @@ public class GeneratorServiceImpl implements GeneratorService {
         return switch (payload.getLanguage().toLowerCase()) {
             case "java" -> 8080;
             case "python" -> 5000;
-            case "javascript", "node" -> 3000;
+            case "javascript", "typescript" -> 3000;
             default -> 8080;
         };
     }
@@ -227,6 +233,7 @@ public class GeneratorServiceImpl implements GeneratorService {
             case "java" -> "Main.java";
             case "python" -> "main.py";
             case "javascript", "node" -> "index.js";
+            case "typescript" -> "index.ts";
             default -> "main.txt";
         };
     }
@@ -267,9 +274,6 @@ public class GeneratorServiceImpl implements GeneratorService {
         payload.setCode(code);
         return payload;
     }
-
-
-
 
 
 }

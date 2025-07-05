@@ -66,7 +66,7 @@ export class CodeEditorComponent implements AfterViewInit, OnDestroy {
 
     const model = editor.getModel();
     if (model) {
-      monaco.editor.setModelLanguage(model, this.language || 'plaintext');
+      monaco.editor.setModelLanguage(model, this.language || 'json');
 
       model.onDidChangeContent(() => {
         const updatedCode = model.getValue();

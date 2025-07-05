@@ -11,6 +11,5 @@ import java.io.IOException;
 public interface GeneratorService {
 
     Diagram generate(GenerationParamsDTO params);
-    String exportDockerCompose(Diagram diagram) throws IOException;
-    ByteArrayOutputStream exportDockerComposeFull(Diagram diagram) throws IOException;
+    ByteArrayOutputStream exportDockerCompose(Diagram diagram) throws IOException;
 }

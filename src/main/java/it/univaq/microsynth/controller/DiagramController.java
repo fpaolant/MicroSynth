@@ -53,8 +53,8 @@ public class DiagramController {
             @ApiResponse(responseCode = "404", description = "diagram not found"),
             @ApiResponse(responseCode = "500", description = "Internal server Error")
     })
-    @PutMapping("/{id}")
-    public ResponseEntity<DocumentResponseDTO> updateDiagram(@PathVariable("id") String projectId, @RequestBody DiagramDTO diagramDTO) {
+    @PutMapping("/{project_id}")
+    public ResponseEntity<DocumentResponseDTO> updateDiagram(@PathVariable("project_id") String projectId, @RequestBody DiagramDTO diagramDTO) {
         return projectService.updateDiagram(projectId, diagramDTO);
     }
 
@@ -88,31 +88,12 @@ public class DiagramController {
     })
     @PostMapping("/generate")
     public ResponseEntity<Diagram> generate(@RequestBody @Valid GenerationParamsDTO params) {
+        log.info("Generating a diagram {}", params.toString());
         Diagram diagram = generatorService.generate(params);
         return ResponseEntity.ok(diagram);
     }
 
-    /**
-     * Export docker compose for a given diagram
-     * @param params GenerationParamsDTO
-     * @return InputStreamResource file stream yaml of docker compose
-     */
-    @PostMapping("/export/compose")
-    public ResponseEntity<InputStreamResource> exportDockerCompose(@RequestBody GenerationParamsDTO params) throws IOException {
-        Diagram diagram = generatorService.generate(params);
-        String yaml = generatorService.exportDockerCompose(diagram);
 
-        ByteArrayInputStream stream = new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8));
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=docker-compose.yml");
-
-        return ResponseEntity.ok()
-                .headers(headers)
-                .contentLength(yaml.length())
-                .contentType(MediaType.parseMediaType("application/x-yaml"))
-                .body(new InputStreamResource(stream));
-    }
 
     /**
      * Export docker compose FULL for a given diagram
@@ -128,10 +109,10 @@ public class DiagramController {
      * │   └── Main.java
      * ...
      */
-    @PostMapping("/export/composefull")
-    public ResponseEntity<InputStreamResource> exportDockerComposeFull(@RequestBody @Nullable Diagram diagram) throws IOException {
+    @PostMapping("/export/compose")
+    public ResponseEntity<InputStreamResource> exportDockerCompose(@RequestBody @Nullable Diagram diagram) throws IOException {
         if(diagram == null) diagram = this.generatorService.generate(new GenerationParamsDTO(3,1,0.5));
-        ByteArrayOutputStream zipStream = generatorService.exportDockerComposeFull(diagram);
+        ByteArrayOutputStream zipStream = generatorService.exportDockerCompose(diagram);
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Disposition", "attachment; filename=microsynth.zip");

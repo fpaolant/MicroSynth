@@ -1,12 +1,14 @@
 <p-toolbar>
     <ng-template #start>
         <p-buttongroup>
-            <p-button label="Add" icon="pi pi-plus" class="mr-2" text severity="secondary"  (onClick)="addNode()" />
-            <p-button label="Clear" icon="pi pi-times" class="mr-2" text severity="secondary" (onClick)="clear()" [disabled]="false" />
+            <p-button label="Generate" icon="pi pi-sparkles" class="mr-2" text severity="primary" (onClick)="generate()" />
+            <p-button label="Add" icon="pi pi-plus" class="mr-2" text severity="secondary" (onClick)="addNode()" />
+            <p-button class="mr-2" icon="pi pi-download" severity="secondary" (onClick)="onImport()" pTooltip="import from json" tooltipPosition="top"/>
+            <p-button label="Clear" icon="pi pi-times" class="mr-2" text severity="secondary" (onClick)="clear()" />
             <p-button label="Arrange" icon="pi pi-th-large" text severity="secondary" (onClick)="reorder()" />
         </p-buttongroup>
         
-        
+
         <!-- <p-dropdown 
             [options]="shapes"
             placeholder="Select a shape"
@@ -23,14 +25,16 @@
     <ng-template #center></ng-template>
 
     <ng-template #end>
-        <p-button class="mr-2" icon="pi pi-upload" severity="secondary" (onClick)="download()" 
-        pTooltip="export in JSON" tooltipPosition="top"/>
-        <p-button class="mr-2" icon="pi pi-download" severity="secondary" (onClick)="onImport()" 
-        pTooltip="import from json" tooltipPosition="top"/>
+        <p-button class="mr-2" icon="pi pi-sparkles" severity="info" label="Generate Docker Compose " (onClick)="dockerDownload()" [disabled]="!canExport" outlined />
+        <p-button class="mr-2" icon="pi pi-upload" severity="primary" label="Export as JSON" (onClick)="download()" [disabled]="!canExport" outlined />
+        
+        
         <p-button label="Save" (onClick)="save()" severity="primary" [disabled]="!diagramTouched"/>
     </ng-template>
 </p-toolbar>
+
 <div #editor class="editor-container"></div>
+
 <app-upload-file-dialog
   [(visible)]="uploadFileVisible"
   [multiple]="false"
@@ -61,3 +65,58 @@
         </div>
     </ng-template>
 </p-confirmdialog>
+
+<p-dialog header="Generate Graph" [modal]="true" [(visible)]="generateDialogVisible" [style]="{ width: '25rem' }">
+    <span class="p-text-secondary block mb-8">Information.</span>
+    <form [formGroup]="generateGraphForm">
+      <div class="flex flex-col">
+        
+        <!-- Nodes -->
+        <div class="items-center gap-4">
+          <label for="nodes" class="font-semibold w-full mb-2">Num of Microservices</label>
+          <input pInputText id="nodes" type="number" class="w-full mt-2" formControlName="nodes" autocomplete="off" />
+          <p-message *ngIf="generateGraphForm.get('nodes')?.errors?.['required']" severity="error" variant="simple" class="w-full" size="small">
+            Number of nodes is required
+          </p-message>
+          <p-message *ngIf="generateGraphForm.get('nodes')?.errors?.['min']" severity="error" variant="simple" class="w-full" size="small">
+            Minimum number of nodes is 1
+          </p-message>
+        </div>
+  
+        <!-- Roots -->
+        <div class="items-center gap-4">
+          <label for="roots" class="font-semibold mb-2">Num of Microservice consumer</label>
+          <input pInputText id="roots" type="number" class="w-full mt-2" formControlName="roots" autocomplete="off" />
+          <p-message *ngIf="generateGraphForm.get('roots')?.errors?.['required']" severity="error" variant="simple" class="w-full" size="small">
+            Number of roots is required
+          </p-message>
+          <p-message *ngIf="generateGraphForm.get('roots')?.errors?.['min']" severity="error" variant="simple" class="w-full" size="small">
+            Minimum number of roots is 0
+          </p-message>
+          <p-message *ngIf="generateGraphForm.errors?.['invalidRoots']" severity="error" variant="simple" class="w-full" size="small">
+            Number of roots must be less than or equal to number of nodes
+          </p-message>
+        </div>
+  
+        <!-- Density -->
+        <div class="items-center gap-4">
+          <label for="density" class="font-semibold mb-2">Density</label>
+          <input pInputText id="density" type="number" class="w-full mt-2" formControlName="density" autocomplete="off" step="0.10" min="0" max="1" />
+          <p-message *ngIf="generateGraphForm.get('density')?.errors?.['required']" severity="error" variant="simple" class="w-full" size="small">
+            Density is required
+          </p-message>
+          <p-message *ngIf="generateGraphForm.get('density')?.errors?.['min']" severity="error" variant="simple" class="w-full" size="small">
+            Minimum density is 0.0
+          </p-message>
+          <p-message *ngIf="generateGraphForm.get('density')?.errors?.['max']" severity="error" variant="simple" class="w-full" size="small">
+            Maximum density is 1.0
+          </p-message>
+        </div>
+      </div>
+    </form>
+  
+    <div class="flex justify-end gap-2 mt-6">
+      <p-button label="Cancel" severity="secondary" (click)="generateDialogVisible = false" />
+      <p-button label="Generate" [disabled]="generateGraphForm.invalid" (click)="generateGraph()" />
+    </div>
+  </p-dialog>

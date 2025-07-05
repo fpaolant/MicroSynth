@@ -15,34 +15,40 @@
 </p-breadcrumb>
 
 <div class="card">
-  <div class="font-semibold text-xl mb-4" (click)="changeName=true" *ngIf="!changeName">{{diagram?.name}}</div>
+  <div
+    class="font-semibold text-xl mb-4"
+    (click)="changeName = true"
+    *ngIf="!changeName"
+  >
+    {{ diagram?.name }}
+  </div>
   <div class="my-4">
     <!-- <p-button [label]="diagram?.name" text (click)="changeName=true" *ngIf="!changeName"/> -->
     <p-inputgroup *ngIf="changeName">
-        <input pInputText [value]="nameDraft" class="w-[25rem]" #nameInputText />
-        <p-inputgroup-addon>
-            <button pButton icon="pi pi-save" (click)="onNameChange(nameInputText.value);"></button>
-            <button pButton icon="pi pi-times" (click)="onCancelName()"></button>
-        </p-inputgroup-addon>
-      </p-inputgroup>
-    </div>
-  <p-splitter [panelSizes]="[80, 20]" [minSizes]="[80, 20]">
-    <ng-template #panel>
-      <div class="h-full w-full p-6">
-        <app-editor
-          #editor
-          [title]="diagram?.name"
-          [diagram]="diagramDataDraft"
-          (editorAreaCleared)="onEditorAreaCleared($event)"
-          (onSave)="onSave($event)"
-          [exportFormatHandler]="exportFormatHandler"
-        ></app-editor>
-      </div>
-    </ng-template>
-    <ng-template #panel>
-      <div class="flex items-center justify-center h-full">Panel 2</div>
-    </ng-template>
-  </p-splitter>
+      <input pInputText [value]="nameDraft" class="w-[25rem]" #nameInputText />
+      <p-inputgroup-addon>
+        <button
+          pButton
+          icon="pi pi-save"
+          (click)="onNameChange(nameInputText.value)"
+        ></button>
+        <button pButton icon="pi pi-times" (click)="onCancelName()"></button>
+      </p-inputgroup-addon>
+    </p-inputgroup>
+  </div>
+  
+  <div class="h-full w-full p-6">
+    <app-editor
+      #editor
+      [title]="diagram?.name"
+      [diagram]="diagramDataDraft"
+      (editorAreaCleared)="onEditorAreaCleared($event)"
+      (onSave)="onSave($event)"
+      (onGenerate)="onGenerate($event)"
+      (onDockerDownload)="onDockerDownload($event)"
+      [exportFormatHandler]="exportFormatHandler"
+    ></app-editor>
+  </div>
 </div>
 
 <p-toast position="bottom-right" key="br" />

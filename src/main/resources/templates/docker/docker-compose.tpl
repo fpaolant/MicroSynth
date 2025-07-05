@@ -2,5 +2,5 @@ version: '3.8'
 services:
 {{services}}
 networks:
-  microsynth-net:
+  {{network_name}}:
     driver: bridge

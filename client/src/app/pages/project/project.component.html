@@ -43,6 +43,7 @@
         <p-button
           *ngIf="(project()?.diagrams?.length ?? 0) > 0 || false"
           icon="pi pi-plus"
+          label="Create a new System"
           text
           raised
           rounded
@@ -55,7 +56,7 @@
       <div class="text-center text-surface-500 dark:text-surface-400 py-4">
         <div class="mb-8">No graph found.</div>
         <p-button
-          label="Add a new graph"
+          label="Create a new System"
           icon="pi pi-plus"
           variant="text"
           severity="success"

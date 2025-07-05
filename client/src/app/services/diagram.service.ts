@@ -45,6 +45,11 @@ export interface DiagramNode {
   weight: number;
 }
 
+interface GenerateDiagramParams {
+  nodes: number; // Number of nodes (must be >= 1)
+  roots: number; // Number of roots (must be >= 0)
+  density: number; // Density (must be between 0.0 and 1.0 inclusive)
+}
 
 
 
@@ -85,6 +90,25 @@ export class DiagramService {
     return this.http.delete<string>(`${this.baseUrl}/${projectId}/${diagramId}`, {
       headers,
       responseType: 'text' as 'json'
+    });
+  }
+
+  generateDiagram(params: GenerateDiagramParams): Observable<Diagram> {
+    const headers = new HttpHeaders({ 
+      'Content-Type': 'application/json',
+      'Use-Auth': 'true' 
+    });
+    return this.http.post<Diagram>(`${this.baseUrl}/generate`, params, {headers});
+  }
+
+  exportDockerCompose(diagram: Diagram): Observable<Blob> {
+    const headers = new HttpHeaders({ 
+      'Content-Type': 'application/json',
+      'Use-Auth': 'true'
+    });
+    return this.http.post(`${this.baseUrl}/export/compose`, diagram, {
+      headers,
+      responseType: 'blob'
     });
   }
  
