@@ -100,16 +100,5 @@ export class DiagramService {
     });
     return this.http.post<Diagram>(`${this.baseUrl}/generate`, params, {headers});
   }
-
-  exportDockerCompose(diagram: Diagram): Observable<Blob> {
-    const headers = new HttpHeaders({ 
-      'Content-Type': 'application/json',
-      'Use-Auth': 'true'
-    });
-    return this.http.post(`${this.baseUrl}/export/compose`, diagram, {
-      headers,
-      responseType: 'blob'
-    });
-  }
  
 }

@@ -1,0 +1,70 @@
+<p-dialog [modal]="true" [(visible)]="visible" [style]="{ width: '35rem' }" (onHide)="closeDialog()">
+  <ng-template pTemplate="header">
+    <div class="flex items-center text-left w-full">
+      <i class="pi pi-sparkles mr-2"></i>
+      <span class="text-xl">Generate System Graph</span>
+    </div>
+  </ng-template>
+    <span class="p-text-secondary block mb-8 text-justify leading-6 text-gray-500">
+      Use this form to automatically generate a Directed Acyclic Graph (DAG) that models a microservices system. 
+      The algorithm generates unique nodes, orders them topologically, and connects them with a controlled probability, ensuring the absence of cycles.
+    </span>
+    <form [formGroup]="generateGraphForm"class="flex flex-col gap-6 w-full">
+        <!-- Nodes -->
+         <div class="flex flex-row gap-4">
+          <div class="items-center gap-4 w-1/2">
+            <label for="nodes" class="font-semibold w-full mb-2">Num of nodes <small class="p-text-secondary text-gray-400">(Microservices)</small></label>
+            <input pInputText id="nodes" type="number" class="w-full mt-2" formControlName="nodes" autocomplete="off" />
+            <p-message *ngIf="generateGraphForm.get('nodes')?.errors?.['required']" severity="error" variant="simple" class="w-full" size="small">
+              Number of nodes is required
+            </p-message>
+            <p-message *ngIf="generateGraphForm.get('nodes')?.errors?.['min']" severity="error" variant="simple" class="w-full" size="small">
+              Minimum number of nodes is 1
+            </p-message>
+            <p-message *ngIf="generateGraphForm.get('nodes')?.errors?.['max']" severity="error" variant="simple" class="w-full" size="small">
+              Maximum number of nodes is 100
+            </p-message>
+          </div>
+  
+          <!-- Roots -->
+          <div class="items-center gap-4 w-1/2">
+            <label for="roots" class="font-semibold mb-2">Num of Roots <small class="p-text-secondary text-gray-400">(Node without incoming)</small></label>
+            <input pInputText id="roots" type="number" class="w-full mt-2" formControlName="roots" autocomplete="off" />
+            <p-message *ngIf="generateGraphForm.get('roots')?.errors?.['required']" severity="error" variant="simple" class="w-full" size="small">
+              Number of roots is required
+            </p-message>
+            <p-message *ngIf="generateGraphForm.get('roots')?.errors?.['min']" severity="error" variant="simple" class="w-full" size="small">
+              Minimum number of roots is 0.
+            </p-message>
+            <p-message *ngIf="generateGraphForm.get('roots')?.errors?.['max']" severity="error" variant="simple" class="w-full" size="small">
+              Maximum number of roots is 80.
+            </p-message>
+            <p-message *ngIf="generateGraphForm.errors?.['invalidRoots']" severity="error" variant="simple" class="w-full" size="small">
+              Number of roots must be less than or equal to number of nodes.
+            </p-message>
+          </div>
+        </div>
+  
+        <!-- Density -->
+        <div class="items-center gap-4" class="mb-8">
+          <label for="density" class="font-semibold mb-2 mr-2">Density</label>
+          <small class="p-text-secondary text-gray-400">(Probability of connection between a couple of nodes)</small>
+          <input pInputText id="density" type="number" class="w-full mt-2 mb-8" [disabled]="true" [value]="generateGraphForm.get('density')?.value" readonly autocomplete="off" step="0.10" min="0" max="1" />
+          <p-slider formControlName="density" [min]="0" [max]="1" step="0.1" />
+          <p-message *ngIf="generateGraphForm.get('density')?.errors?.['required']" severity="error" variant="simple" class="w-full" size="small">
+            Density is required
+          </p-message>
+          <p-message *ngIf="generateGraphForm.get('density')?.errors?.['min']" severity="error" variant="simple" class="w-full" size="small">
+            Minimum density is 0.0
+          </p-message>
+          <p-message *ngIf="generateGraphForm.get('density')?.errors?.['max']" severity="error" variant="simple" class="w-full" size="small">
+            Maximum density is 1.0
+          </p-message>
+        </div>
+    </form>
+  
+    <div class="flex justify-end gap-2 mt-6">
+      <p-button label="Cancel" severity="secondary" (click)="closeDialog()" />
+      <p-button label="Generate" [disabled]="generateGraphForm.invalid" (click)="onGenerateClick()" />
+    </div>
+  </p-dialog>

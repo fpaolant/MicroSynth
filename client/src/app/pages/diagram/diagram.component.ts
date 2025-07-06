@@ -25,6 +25,7 @@ import {
 import { ToastModule } from "primeng/toast";
 import { InputGroupAddon } from "primeng/inputgroupaddon";
 import { InputGroupModule } from "primeng/inputgroup";
+import { ExportService } from "../../services/export.service";
 
 @Component({
   selector: "app-diagram",
@@ -49,6 +50,7 @@ export class DiagramPage implements OnInit {
   // services
   projectService = inject(ProjectService);
   diagramService = inject(DiagramService);
+  exportService = inject(ExportService);
   messageService = inject(MessageService);
 
   // breadcrumbs
@@ -126,7 +128,6 @@ export class DiagramPage implements OnInit {
   loadDiagram() {
     if (!this.diagram?.data) return;
     this.diagramDataDraft = this.diagram.data;
-    // console.log("diagram to import", this.diagram.data)
   }
 
   addNode(name: string) {
@@ -281,13 +282,12 @@ export class DiagramPage implements OnInit {
             detail: "Failed to generate diagram",
           });
       }
-
     });
   }
 
   onDockerDownload($event: any) {
     if(!this.diagram) return;
-    this.diagramService.exportDockerCompose(this.diagram).subscribe({
+    this.exportService.exportDockerCompose(this.diagram).subscribe({
       next: (blob: Blob) => {
         // Crea un oggetto URL temporaneo per il blob
         const url = window.URL.createObjectURL(blob);

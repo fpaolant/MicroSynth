@@ -42,7 +42,6 @@ import { Connection, Node } from "./presets";
 import { ComputedSocketPosition } from "./util/util";
 import { AreaExtra, Schemes, Shape } from "./types";
 import { DropdownChangeEvent, DropdownModule } from "primeng/dropdown";
-import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from "@angular/forms";
 import { MinimapPlugin } from "rete-minimap-plugin";
 import {
   ConnectionPathPlugin,
@@ -70,13 +69,14 @@ import { DialogModule } from "primeng/dialog";
 import { InputTextModule } from "primeng/inputtext";
 import { SliderModule } from 'primeng/slider'
 import { MessageModule } from "primeng/message";
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { GenerateDiagramDialogComponentComponent } from "./generate-diagram-dialog-component/generate-diagram-dialog-component.component";
 
 @Component({
   selector: "app-editor",
   standalone: true,
   imports: [
     CommonModule,
-    ReactiveFormsModule,
     ToolbarModule,
     ButtonModule,
     IconFieldModule,
@@ -91,25 +91,27 @@ import { MessageModule } from "primeng/message";
     ConfirmDialogModule,
     InputTextModule,
     SliderModule,
-    MessageModule
-  ],
+    MessageModule,
+    ProgressSpinnerModule,
+    GenerateDiagramDialogComponentComponent
+],
   providers: [MessageService, ConfirmationService],
   templateUrl: "./editor.component.html",
-  styles: [
-    `
-      .editor-container {
-        width: 100%;
-        height: calc(100vh - 24rem);
-      }
-    `,
-  ],
+  styleUrl: "./editor.component.scss"
+  // styles: [
+  //   `
+  //     .editor-container {
+  //       width: 100%;
+  //       height: calc(100vh - 24rem);
+  //     }
+  //   `,
+  // ],
 })
 export class EditorComponent implements OnInit, AfterViewInit {
   @ViewChild("editor", { static: true }) containerRef!: ElementRef;
   injector = inject(Injector);
   messageService = inject(MessageService);
   confirmationService = inject(ConfirmationService);
-  fb = inject(FormBuilder);
 
   private _diagram!: DiagramData;
   @Input()
@@ -171,13 +173,6 @@ export class EditorComponent implements OnInit, AfterViewInit {
     return this._diagram.nodes.length>0 && !this.diagramTouched
   }
 
-  // dialog generate
-  generateGraphForm: FormGroup = this.fb.group({
-    nodes: [5, [Validators.required, Validators.min(1), Validators.max(100)]],
-    roots: [2, [Validators.required, Validators.min(0), Validators.max(80)]],
-    density: [0.5, [Validators.required, Validators.min(0), Validators.max(1)]]
-  }, { validators: this.rootsValidator });
-  
 
 
 
@@ -392,33 +387,25 @@ export class EditorComponent implements OnInit, AfterViewInit {
     };
 
     const clear$: Observable<any> = clearBefore
-      ? from(this.editor.clear()) // converte Promise in Observable
+      ? from(this.editor.clear())
       : of(null);
 
     clear$
       .pipe(
         switchMap(() => loadData()),
-        take(1),
-        finalize(() => {
-          this.loadingDiagram.set(false);
-        })
+        take(1)
       )
       .subscribe({
         next: () => {
-          this.reorder();
+          this.reorder().then(()=> {
+            this.loadingDiagram.set(false);
+            this.diagramTouched = true;
+          });
           if (action === "import") {
             this.messageService.add({
               severity: "success",
               summary: "Graph loaded successfully",
             });
-            this.diagramTouched = true;
-          }
-          if (action === "generate") {
-            this.messageService.add({
-              severity: "success",
-              summary: "Graph generated successfully",
-            });
-            this.diagramTouched = true;
           }
         },
         error: (err) => {
@@ -623,10 +610,6 @@ export class EditorComponent implements OnInit, AfterViewInit {
     }
   }
 
-  generate() {
-    this.generateDialogVisible = true;
-  }
-
   private exportAsJson() {
     const nodes = this.editor.getNodes();
     const connections = this.editor.getConnections();
@@ -637,25 +620,8 @@ export class EditorComponent implements OnInit, AfterViewInit {
     return json;
   }
 
-  generateGraph() {
-    if (!this.generateGraphForm.valid) return;
-    this.onGenerate.emit(this.generateGraphForm.value);
-    this.generateDialogVisible = false;
-    this.diagramTouched = true;
-  }
-
   dockerDownload() {
     this.onDockerDownload.emit();
-  }
-
-  private rootsValidator(group: AbstractControl): ValidationErrors | null {
-    const nodes = group.get('nodes')?.value;
-    const roots = group.get('roots')?.value;
-
-    if (roots < nodes) {
-      return null;
-    }
-    return { invalidRoots: true };
   }
 
 

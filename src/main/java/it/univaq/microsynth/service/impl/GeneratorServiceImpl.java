@@ -29,7 +29,7 @@ import java.util.zip.ZipOutputStream;
 public class GeneratorServiceImpl implements GeneratorService {
 
     @Override
-    public Diagram generate(GenerationParamsDTO params) {
+    public Diagram generate(GenerationParamsDTO params) throws IllegalArgumentException {
         int n = params.getNodes();
         int r = params.getRoots();
         double d = params.getDensity();

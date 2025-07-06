@@ -83,14 +83,25 @@ public class DiagramController {
      */
     @Operation(summary = "Generate a diagram", description = "return diagram")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "success"),
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid parameters"),
             @ApiResponse(responseCode = "500", description = "Internal server Error")
     })
     @PostMapping("/generate")
-    public ResponseEntity<Diagram> generate(@RequestBody @Valid GenerationParamsDTO params) {
+    public ResponseEntity<?> generate(@RequestBody @Valid GenerationParamsDTO params) {
         log.info("Generating a diagram {}", params.toString());
-        Diagram diagram = generatorService.generate(params);
-        return ResponseEntity.ok(diagram);
+
+        try {
+            Diagram diagram = generatorService.generate(params);
+            log.info("Generated diagram");
+            return ResponseEntity.ok(diagram);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("Error generating diagram: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+
     }
 
 
