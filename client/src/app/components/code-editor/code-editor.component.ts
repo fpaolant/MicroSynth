@@ -89,8 +89,6 @@ export class CodeEditorComponent implements AfterViewInit, OnDestroy {
   private checkForErrors() {
     const model = this.editorInstance.getModel();
     if (!model) return;
-
-    console.log("check errors with model uri", model.uri)
     const markers = monaco.editor.getModelMarkers({ resource: model.uri });
     const hasErrors = markers.some(marker => marker.severity === monaco.MarkerSeverity.Error);
     //this.hasErrorsChange.emit(!hasErrors);
