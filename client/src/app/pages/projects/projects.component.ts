@@ -90,17 +90,15 @@ export class ProjectsPage implements OnInit {
           severity: 'danger',
       },
       accept: () => {
-        console.log('Deleting project:', project);
         this.projectService.deleteProject(project.id).subscribe({
-              next: () => {
-                this.loadProjects();
-                this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Project deleted successfully.', life: 3000 });
-              },
-              error: (error) => {
-                console.error('Error deleting project:', error);
-              }
-            });
-
+          next: () => {
+            this.loadProjects();
+            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Project deleted successfully.', life: 3000 });
+          },
+          error: (error) => {
+            console.error('Error deleting project:', error);
+          }
+        });
       }
     });    
   }

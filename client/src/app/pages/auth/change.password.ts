@@ -150,8 +150,6 @@ export class ChangePassword implements OnInit {
 
         if(!this.username) return;
 
-        console.log(this.changePasswordForm.value)
-
         const request: ChangePasswordRequest = { 
             username: this.username, 
             oldPassword: this.changePasswordForm.value.oldPassword, 
@@ -160,7 +158,6 @@ export class ChangePassword implements OnInit {
 
         this.authService.changePassword(request).subscribe({
         next: () => {
-            console.log('Password cambiata con successo');
             this.showMessage('success', 'Password changed succesfully', 'Success');
 
             setTimeout(() => {

@@ -29,8 +29,6 @@ import { CustomSocketComponent } from '../components/editor/custom-socket/custom
   
       if (this.data.type === 'socket') {
         component = CustomSocketComponent;
-      } else{
-       console.log('RefComponentDirective initialized with datatype:', this.data.type);
       }
   
       if (component) {

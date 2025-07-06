@@ -106,7 +106,7 @@ export class Signup implements OnInit {
       },
       error: (err) => {
         this.showMessage("error", "Error during signup", "Error");
-        console.log("Signup error", err);
+        console.error("Signup error", err);
         this.submitted = false;
         this.signupForm.enable();
       },
