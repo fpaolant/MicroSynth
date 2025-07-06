@@ -113,6 +113,12 @@ export class AuthService {
     return this.http.post<boolean>(`${this.baseUrl}/check-token`, token);
   }
 
+  refreshToken(): Observable<TokenResponse> {
+    return this.http.post<TokenResponse>(`${this.baseUrl}/refresh`, { token: this.getToken() }).pipe(
+      tap((response) => this.saveToken(response.token))
+    );
+  }
+
   isTokenValid(): Observable<boolean> {
     const token = this.getToken();
     

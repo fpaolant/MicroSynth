@@ -66,9 +66,6 @@ export class AccountService {
   openAccountUser(accountRequest: OpenAccountRequest): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/user-account`, accountRequest).pipe(
       tap({
-        next: (response: any) => {
-          console.log('User account created successfully', response);
-        },
         error: (error: any) => {
           console.error('Error creating user account', error);
         }
