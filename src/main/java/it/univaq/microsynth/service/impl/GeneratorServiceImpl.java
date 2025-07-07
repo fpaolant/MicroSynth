@@ -57,38 +57,47 @@ public class GeneratorServiceImpl implements GeneratorService {
             rootIndices.add(rand.nextInt(n));
         }
 
-        // 3. Generate connections
-        int maxConnections = n * (n - 1);
+        // 3. Generate all possible edges where from < to (to ensure acyclicity)
+        List<int[]> possibleEdges = new ArrayList<>();
+        for (int from = 0; from < n - 1; from++) {
+            for (int to = from + 1; to < n; to++) {
+                if (!rootIndices.contains(to)) {
+                    possibleEdges.add(new int[]{from, to});
+                }
+            }
+        }
+
+        // 4. Shuffle and add edges up to the target density
+        int maxConnections = possibleEdges.size();
         int targetConnections = (int) Math.round(d * maxConnections);
+
+        Collections.shuffle(possibleEdges, rand);
         Set<String> existingEdges = new HashSet<>();
 
-        while (connections.size() < targetConnections) {
-            int from = rand.nextInt(n);
-            int to = rand.nextInt(n);
-
-            if (from == to) continue;
-            if (rootIndices.contains(to)) continue;
-
-            String edgeKey = from + "->" + to;
-            if (existingEdges.contains(edgeKey)) continue;
-
-            existingEdges.add(edgeKey);
+        for (int i = 0; i < Math.min(targetConnections, maxConnections); i++) {
+            int[] edge = possibleEdges.get(i);
+            int from = edge[0];
+            int to = edge[1];
 
             String sourceId = nodeIds.get(from);
             String targetId = nodeIds.get(to);
+            String edgeKey = from + "->" + to;
 
-            connections.add(new Connection(
-                    UUID.randomUUID().toString(),
-                    sourceId,
-                    targetId,
-                    false,
-                    0L,
-                    "calls",
-                    new Payload()
-            ));
+            if (!existingEdges.contains(edgeKey)) {
+                existingEdges.add(edgeKey);
+                connections.add(new Connection(
+                        UUID.randomUUID().toString(),
+                        sourceId,
+                        targetId,
+                        false,
+                        0L,
+                        "calls",
+                        new Payload()
+                ));
+            }
         }
 
-        // 4. Build diagram
+        // 5. Build diagram
         Diagram diagram = new Diagram();
         diagram.setId(UUID.randomUUID().toString());
         diagram.setName("Generated Diagram");
@@ -96,6 +105,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 
         return diagram;
     }
+
 
     @Override
     public ByteArrayOutputStream exportDockerCompose(Diagram diagram) throws IOException {
