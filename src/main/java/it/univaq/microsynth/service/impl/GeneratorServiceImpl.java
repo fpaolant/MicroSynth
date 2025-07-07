@@ -15,13 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -141,6 +135,27 @@ public class GeneratorServiceImpl implements GeneratorService {
 
         String netName = diagram.getName().toLowerCase().replace(" ", "_") + "-net";
 
+        // Map to hold node IDs to service names
+        Map<String, String> nodeIdToServiceName = new HashMap<>();
+        for (Node node : diagram.getData().getNodes()) {
+            String serviceName = node.getLabel().toLowerCase().replace(" ", "_");
+            nodeIdToServiceName.put(node.getId(), serviceName);
+        }
+
+        // Create a map to hold service dependencies
+        Map<String, List<String>> serviceDependencies = new HashMap<>();
+        for (Connection conn : diagram.getData().getConnections()) {
+            String sourceService = nodeIdToServiceName.get(conn.getSource());
+            String targetService = nodeIdToServiceName.get(conn.getTarget());
+
+            if (sourceService != null && targetService != null) {
+                serviceDependencies
+                        .computeIfAbsent(sourceService, k -> new ArrayList<>())
+                        .add(targetService);
+            }
+        }
+
+        // Generate services section
         for (Node node : diagram.getData().getNodes()) {
             String serviceName = node.getLabel().toLowerCase().replace(" ", "_");
             Payload payload = node.getPayload();
@@ -153,6 +168,16 @@ public class GeneratorServiceImpl implements GeneratorService {
             servicesSection.append("    container_name: ").append(serviceName).append("\n");
             servicesSection.append("    ports:\n");
             servicesSection.append("      - \"").append(externalPort).append(":").append(internalPort).append("\"\n");
+
+            // Add depends_on if there are dependencies
+            List<String> dependsOn = serviceDependencies.get(serviceName);
+            if (dependsOn != null && !dependsOn.isEmpty()) {
+                servicesSection.append("    depends_on:\n");
+                for (String dep : dependsOn) {
+                    servicesSection.append("      - ").append(dep).append("\n");
+                }
+            }
+
             servicesSection.append("    networks:\n");
             servicesSection.append("      - ").append(netName).append("\n");
         }
