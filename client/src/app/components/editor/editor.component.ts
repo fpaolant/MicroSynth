@@ -170,7 +170,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   loadingDiagram = signal(false);
 
   get canExport() {
-    return this._diagram.nodes.length>0 && !this.diagramTouched
+    return !this.diagramTouched && this.editor.getNodes().length > 0  && !hasCycle(this.editor.getNodes(), this.editor.getConnections())
   }
 
 
@@ -386,6 +386,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
       );
     };
 
+    // start
     const clear$: Observable<any> = clearBefore
       ? from(this.editor.clear())
       : of(null);
@@ -393,18 +394,31 @@ export class EditorComponent implements OnInit, AfterViewInit {
     clear$
       .pipe(
         switchMap(() => loadData()),
-        take(1)
+        take(1),
+        switchMap(() => of(this.reorder())),
+        finalize(()=> {
+          console.log("finalize", action)
+          if(action !== 'init') this.diagramTouched = true;
+          this.loadingDiagram.set(false);
+        })
       )
       .subscribe({
         next: () => {
-          this.reorder().then(()=> {
-            this.loadingDiagram.set(false);
-            this.diagramTouched = true;
-          });
+          // this.reorder().then(()=> {
+          //   this.loadingDiagram.set(false);
+            
+          // });
           if (action === "import") {
             this.messageService.add({
               severity: "success",
               summary: "Graph loaded successfully",
+            });
+          }
+
+          if (action === "generate") {
+            this.messageService.add({
+              severity: "success",
+              summary: "Graph generated successfully",
             });
           }
         },
@@ -415,6 +429,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
             summary: "Error during graph import",
           });
         },
+
       });
   }
 
