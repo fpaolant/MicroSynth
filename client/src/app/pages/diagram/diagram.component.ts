@@ -2,7 +2,6 @@ import { CommonModule } from "@angular/common";
 import {
   Component,
   inject,
-  Injector,
   OnInit,
   signal,
   ViewChild,
@@ -22,7 +21,6 @@ import {
   DiagramNode,
   DiagramService,
 } from "../../services/diagram.service";
-import { ToastModule } from "primeng/toast";
 import { InputGroupAddon } from "primeng/inputgroupaddon";
 import { InputGroupModule } from "primeng/inputgroup";
 import { ExportService } from "../../services/export.service";
@@ -36,7 +34,6 @@ import { ExportService } from "../../services/export.service";
     ButtonModule,
     EditorComponent,
     SplitterModule,
-    ToastModule,
     InputGroupAddon,
     InputGroupModule
   ],
@@ -67,13 +64,13 @@ export class DiagramPage implements OnInit {
   // drafts
   diagramDataDraft: DiagramData = { nodes: [], connections: [] };
   nameDraft:string = '';
+
+  showDrawer: boolean = false;
   
 
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
-    private injector: Injector
   ) {
     this.items.set([
       { icon: "pi pi-home", route: "/" },
@@ -82,10 +79,16 @@ export class DiagramPage implements OnInit {
   }
 
   ngOnInit(): void {
-    // Get state from state
-    const state = history.state;
-    if (state.project) {
-      this.loadProject(state.project.id);
+    const projectId = this.route.snapshot.paramMap.get('projectId');
+    if (projectId) {
+      this.loadProject(projectId);
+    } else {
+      console.error("Project ID is null");
+      this.messageService.add({
+        severity: "error",
+        summary: "Error",
+        detail: "Cannot loading project",
+      });
     }
   }
 
@@ -95,7 +98,8 @@ export class DiagramPage implements OnInit {
         this.project = project;
 
         // Recupera l'id del diagramma (se presente nei parametri)
-        const diagramId = this.route.snapshot.paramMap.get("id");
+        const diagramId = this.route.snapshot.paramMap.get('diagramId');
+        console.log("DID", diagramId)
 
         // find diagram in project or create an empty one
         this.diagram =
@@ -200,7 +204,7 @@ export class DiagramPage implements OnInit {
       id: node.id,
       label: node.label,
       shape: node.shape,
-      payload: { code: node.payload.code, language: node.payload.language },
+      payload: node.payload,
       weight: node.weight,
     }));
 
@@ -212,10 +216,7 @@ export class DiagramPage implements OnInit {
         isLoop: connection.isLoop,
         weight: connection.weight,
         label: connection.label,
-        payload: {
-          code: connection.payload.code,
-          language: connection.payload.language,
-        },
+        payload: connection.payload
       })
     );
 
@@ -287,7 +288,7 @@ export class DiagramPage implements OnInit {
 
   onDockerDownload($event: any) {
     if(!this.diagram) return;
-    this.exportService.exportDockerCompose(this.diagram).subscribe({
+    this.exportService.exportDockerCompose(this.project!.id, this.diagram.id!).subscribe({
       next: (blob: Blob) => {
         // Crea un oggetto URL temporaneo per il blob
         const url = window.URL.createObjectURL(blob);
@@ -295,7 +296,7 @@ export class DiagramPage implements OnInit {
         // Crea un link temporaneo <a>
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'microsynth.zip';
+        a.download = this.diagram?.name.replaceAll(' ', '_') + ".zip";
         document.body.appendChild(a);
         a.click(); // forza il download
         document.body.removeChild(a);

@@ -13,7 +13,7 @@ import { Popover, PopoverModule } from "primeng/popover";
 
 //import { RefComponentDirective } from "../../../directives/ref.component";
 import { RefDirective } from "rete-angular-plugin/19";
-import { Node } from "../presets";
+import { Languages, Node } from "../presets";
 import { FormsModule } from "@angular/forms";
 import { InputIconModule } from "primeng/inputicon";
 import { InputGroupModule } from "primeng/inputgroup";
@@ -24,6 +24,7 @@ import { shapes } from "../constants";
 import { DialogModule } from "primeng/dialog";
 import { InputNumberModule } from "primeng/inputnumber";
 import { CodeEditorComponent } from "../../code-editor/code-editor.component";
+import { Language } from "../types";
 
 @Component({
   standalone: true,
@@ -39,7 +40,7 @@ import { CodeEditorComponent } from "../../code-editor/code-editor.component";
     TooltipModule,
     InputGroupModule,
     InputGroupAddonModule,
-    CodeEditorComponent
+    CodeEditorComponent,
   ],
   selector: "app-custom-node",
   templateUrl: "./custom-node.component.html",
@@ -52,16 +53,11 @@ export class CustomNodeComponent implements OnInit, OnChanges {
   @Input() emit!: (data: any) => void;
   @Input() rendered!: () => void;
 
-  labelMaxlength = 5;
+  labelMaxlength = 10;
 
   seed = 0;
-
-  // drafts
-  labelDraft = "";
-  weightDraft = 0;
-
   payloadDraft = "";
-  payloadLanguageDraft = "json";
+  payloadLanguageDraft: Language = Languages[0] as Language;
   hasPayloadCodeErrors: boolean = false;
   payloadDialogVisible: boolean = false;
 
@@ -74,10 +70,8 @@ export class CustomNodeComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
-    this.labelDraft = this.data.label || "";
-    this.weightDraft = this.data.weight || 0;
     this.payloadDraft = this.data.payload?.code || "";
-    this.payloadLanguageDraft = this.data.payload?.language || "json";
+    this.payloadLanguageDraft = this.data.payload?.language || Languages[0];
     this.labelMaxlength =
       shapes.find((s) => s.value === this.data.shape)?.labelMaxLength || 5;
   }
@@ -148,27 +142,25 @@ export class CustomNodeComponent implements OnInit, OnChanges {
     this.payloadDialogVisible = true;
   }
 
-  changeWeight() {
-    this.data.propertyChange('weight', this.data.weight);
+  onLanguageChange(event: string): void {
+    this.payloadLanguageDraft = event as Language;
   }
 
   cancelPayload() {
     this.payloadDialogVisible = false;
     this.payloadDraft = this.data.payload.code;
-    this.payloadLanguageDraft = this.data.payload.language
+    this.payloadLanguageDraft = this.data.payload.language;
   }
 
   savePayload() {
-    this.data.payload = { code: this.payloadDraft, language: this.payloadLanguageDraft };
+    this.data.payload = {
+      ...this.data.payload,
+      code: this.payloadDraft,
+      language: this.payloadLanguageDraft,
+    };
     this.payloadDraft = this.data.payload.code;
     this.payloadLanguageDraft = this.data.payload.language;
     this.payloadDialogVisible = false;
-    this.data.propertyChange('payload', this.data.payload);
+    this.data.propertyChange("payload", this.data.payload);
   }
-
-  saveLabel() {
-    this.data.label = this.labelDraft
-    this.data.propertyChange('label', this.data.label);
-  }
-  
 }

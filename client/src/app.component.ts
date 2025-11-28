@@ -1,12 +1,16 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FaviconService } from './app/layout/service/favicon.service';
+import { ToastModule } from 'primeng/toast';
 
 @Component({
     selector: 'app-root',
     standalone: true,
-    imports: [RouterModule],
-    template: `<router-outlet></router-outlet>`
+    imports: [RouterModule, ToastModule],
+    template: `
+        <router-outlet></router-outlet>
+        <p-toast position="bottom-right" key="br" />
+    `
 })
 export class AppComponent {
     constructor(private faviconService: FaviconService) {}

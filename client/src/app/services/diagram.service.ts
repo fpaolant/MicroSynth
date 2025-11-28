@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { BaseDocument } from './model/response.document';
+import { ConnectionPayload, NodePayload } from '../components/editor/types';
 
 
 
@@ -28,20 +29,14 @@ export interface DiagramConnection {
   isLoop: boolean;
   weight: number;
   label: string;
-  payload: {
-    code: string;
-    language: string;
-  };
+  payload: ConnectionPayload;
 }
 
 export interface DiagramNode {
   id: string;
   label: string;
   shape: string;
-  payload: {
-    code: string;
-    language: string;
-  };
+  payload: NodePayload;
   weight: number;
 }
 

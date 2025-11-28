@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Diagram } from './diagram.service';
 
@@ -10,17 +10,18 @@ import { Diagram } from './diagram.service';
   providedIn: 'root',
 })
 export class ExportService {
-  private readonly baseUrl = '/api/diagram';
+  private readonly baseUrl = '/api/generator';
 
   constructor(private http: HttpClient) {}
 
 
-  exportDockerCompose(diagram: Diagram): Observable<Blob> {
+  exportDockerCompose(projectId: string, diagramId:string): Observable<Blob> {
     const headers = new HttpHeaders({ 
       'Content-Type': 'application/json',
       'Use-Auth': 'true'
     });
-    return this.http.post(`${this.baseUrl}/export/compose`, diagram, {
+
+    return this.http.get(`${this.baseUrl}/generate/${projectId}/${diagramId}`, {
       headers,
       responseType: 'blob'
     });

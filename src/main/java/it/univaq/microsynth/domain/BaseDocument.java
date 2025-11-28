@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 @Getter
 @EnableMongoAuditing
 public class BaseDocument implements Serializable {
+    @Serial
     private static final long serialVersionUID = 8267652114427102115L;
 
     @Id

@@ -7,7 +7,7 @@ export const shapes: ShapeProps[] = [
     {
       label: 'Circle',
       value: 'circle',
-      labelMaxLength: 6,
+      labelMaxLength: 10,
       size: { width: 80, height: 80 }
     },
     {

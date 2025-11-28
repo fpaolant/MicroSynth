@@ -57,4 +57,18 @@
   
 }
 
+.editor-context-menu {
+  min-width: 300px;
+  height: calc(100vh - 24rem);
+}
+
+::ng-deep rete-minimap {
+  position: absolute !important;
+  bottom: 10px;
+  left: 10px;
+  top: auto;
+  right: auto;
+  z-index: 10; // opzionale, se serve sovrapporlo ad altri elementi
+}
+
 

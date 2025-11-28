@@ -3,7 +3,7 @@
         <p-buttongroup>
             <p-button label="Generate" icon="pi pi-sparkles" class="mr-2" text severity="primary" (onClick)="generateDialogVisible = true" />
             <p-button label="Add" icon="pi pi-plus" class="mr-2" text severity="secondary" (onClick)="addNode()" />
-            <p-button label="Import JSON" class="mr-2" text icon="pi pi-download" severity="secondary" (onClick)="onImport()" />
+            <p-button label="Import JSON" class="mr-2" texticon="pi pi-download" severity="secondary" (onClick)="onImport()" />
             <p-button label="Clear" icon="pi pi-times" class="mr-2" text severity="secondary" (onClick)="clear()" />
             <p-button label="Arrange" icon="pi pi-th-large" text severity="secondary" (onClick)="reorder()" />
         </p-buttongroup>
@@ -33,9 +33,37 @@
     </ng-template>
 </p-toolbar>
 
+<p-splitter [minSizes]="[50,20]" [panelSizes]="[75,25]" [gutterSize]="6" styleClass="mt-8">
+    <ng-template #panel>
+        <div #editor class="card editor-container"></div>
+    </ng-template>
+    <ng-template #panel>
+        <div class="editor-context-menu cardflex flex-col w-full h-full overflow-y-auto px-6 py-8">
+            <editor-context-menu 
+                [node]="nodeSelected|async" 
+                [connection]="connectionSelected|async"
+                [maxWeight]="maxConnectionWeight"
+                (connectionUpdated)="onConnectionChange($event)"
+                (nodeUpdated)="onNodeChange($event)"
+            />
+        </div>
+    </ng-template>
+</p-splitter>
 
+<!-- <div class="flex flex-row gap-8 pt-8">
+    <-- editor--
+    <div #editor class="card editor-container w-4/5"></div>
+    <-- context menu--
+    <div class="editor-context-menu card w-1/5">
+        <editor-context-menu 
+        [node]="nodeSelected|async" 
+        [connection]="connectionSelected|async"
+        (connectionUpdated)="onConnectionChange($event)"
+        (nodeUpdated)="onNodeChange($event)"
+        />
+    </div>
+</div> -->
 
-<div #editor class="editor-container"></div>
 
 <app-upload-file-dialog
   [(visible)]="uploadFileVisible"
@@ -46,10 +74,7 @@
   [description]="'Upload the JSON file to import'"
   (fileParsed)="onFileParsed($event)"
 ></app-upload-file-dialog>
-<p-toast position="bottom-right" key="br" />
 
-
-<p-toast />
 <p-confirmdialog #cd>
     <ng-template #headless let-message let-onAccept="onAccept" let-onReject="onReject">
         <div class="flex flex-col items-center p-8 bg-surface-0 dark:bg-surface-900 rounded">
@@ -68,7 +93,7 @@
     </ng-template>
 </p-confirmdialog>
 
-<generate-diagram-dialog-component [(visible)]="generateDialogVisible" (onGenerate)="onGenerate.emit($event); generateDialogVisible = false" />
+<generate-diagram-dialog-component [(visible)]="generateDialogVisible" (onGenerate)="onGenerate.emit($event); generateDialogVisible = false; diagramTouched = true;" />
 
 <p-dialog maskStyleClass="backdrop-blur-sm" [(visible)]="loadingDiagram" styleClass="!border-0 !bg-transparent">
     <p-progress-spinner ariaLabel="loading" />

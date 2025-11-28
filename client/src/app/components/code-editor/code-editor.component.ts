@@ -3,6 +3,8 @@ import { CommonModule } from "@angular/common";
 import { MonacoEditorModule } from "ngx-monaco-editor-v2";
 import { FormsModule } from "@angular/forms";
 import * as monaco from "monaco-editor";
+import { Languages } from "../editor/presets";
+import { Language } from "../editor/types";
 
 @Component({
   selector: "app-code-editor",
@@ -22,7 +24,7 @@ export class CodeEditorComponent implements AfterViewInit, OnDestroy {
       return this._code;
     }
 
-  @Input() language: string = "json";
+  @Input() language: string = Languages[0];
 
   @Output() codeChange = new EventEmitter<string>();
   @Output() languageChange = new EventEmitter<string>();
@@ -35,7 +37,7 @@ export class CodeEditorComponent implements AfterViewInit, OnDestroy {
 
   editorOptions = {
     theme: "vs-dark",
-    language: "json",
+    language: Languages[0],
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
     lineHeight: 20,
@@ -43,6 +45,8 @@ export class CodeEditorComponent implements AfterViewInit, OnDestroy {
     wordWrap: "on",
     wrappingIndent: "indent",
   };
+
+  languages: Language[] = Languages as Language[];
 
 
   ngAfterViewInit(): void {
@@ -66,7 +70,7 @@ export class CodeEditorComponent implements AfterViewInit, OnDestroy {
 
     const model = editor.getModel();
     if (model) {
-      monaco.editor.setModelLanguage(model, this.language || 'json');
+      monaco.editor.setModelLanguage(model, this.language || Languages[0]);
 
       model.onDidChangeContent(() => {
         const updatedCode = model.getValue();

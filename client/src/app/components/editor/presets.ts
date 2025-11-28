@@ -1,5 +1,5 @@
 import { ClassicPreset } from "rete";
-import { Shape } from "./types";
+import { ApiCall, ApiResponse, ConnectionPayload, Endpoint, Language, NodePayload, Parameter, ParameterValue, Schemes, Shape } from "./types";
 import { CurveFactory } from "d3-shape";
 import { languages } from "monaco-editor";
 
@@ -14,12 +14,11 @@ export class Socket extends ClassicPreset.Socket {
 
 export class Connection<A extends Node, B extends Node> extends ClassicPreset.Connection<A, B> {
   selected?: boolean // custom property to mark selected connections
-  payload: any = {
-    code: '{}',
-    languages: 'json',
-  };
+  sourceNode: Node|undefined;
+  targetNode: Node|undefined;
+  payload: ConnectionPayload;
   label = '';
-  weight = 0;
+  weight = 0.0;
 
   click: (c: Connection<A, B>) => void;
   remove: (c: Connection<A, B>) => void;
@@ -27,9 +26,17 @@ export class Connection<A extends Node, B extends Node> extends ClassicPreset.Co
 
   curve?: CurveFactory;
 
-  constructor(events: { click: (data: Connection<A, B>) => void, remove: (data: Connection<A, B>) => void, propertyChange: (key: string, value: any) => void }, 
-  source: A, target: B, public isLoop: boolean = false) {
+  constructor(
+    events: { click: (data: Connection<A, B>) => void, 
+      remove: (data: Connection<A, B>) => void, 
+      propertyChange: (key: string, value: any) => void,
+      getNodee:(id: Schemes['Node']['id']) =>  Schemes["Node"]
+    }, 
+    source: A, target: B, public isLoop: boolean = false) {
     super(source, 'default', target, 'default')
+    this.sourceNode = source;
+    this.targetNode = target;
+    this.payload = defaultConnectionPayload(this.label);
     this.click = events.click;
     this.remove = events.remove;    
     this.propertyChange = events.propertyChange;
@@ -41,11 +48,8 @@ export class Connection<A extends Node, B extends Node> extends ClassicPreset.Co
 export class Node extends ClassicPreset.Node {
   width = 80;
   height = 80;
-  payload = {
-    code: '{}',
-    language: 'json',
-  };
-  weight = 0;
+  payload: NodePayload = defaultNodePayload(this.label);
+  weight = 0.0;
 
   remove: (c: Node) => void;
   duplicate: (c: Node) => void;
@@ -65,3 +69,67 @@ export class Node extends ClassicPreset.Node {
 
 
 
+
+export const defaultParameterValue = (): ParameterValue<any> => ({
+  name: 'id',
+  value: '12345'
+});
+
+export const defaultApiCall = (): ApiCall => ({
+  path: '/api/getObject',
+  method: 'GET',
+  parameterValues: [defaultParameterValue()]
+});
+
+export const defaultConnectionPayload = (label: string): ConnectionPayload  => { 
+  return {
+    code: '',
+    language: Languages[0] as Language,
+    apiCall: undefined
+  }
+};
+
+
+
+
+export const defaultParameter = (): Parameter => ({
+  name: 'id',
+  type: ParameterTypes[0],
+  required: true
+});
+
+export const defaultApiResponse = (): ApiResponse => ({
+  status: 200,
+  description: 'success',
+  type: 'application/json',
+  content: {'message': 'success'}
+});
+
+export const defaultEndpoint = (): Endpoint => ({
+  path: '/getObject',
+  summary: 'getObject description',
+  method: 'GET',
+  parameters: [defaultParameter()],
+  responses: [defaultApiResponse()]
+});
+
+export const defaultNodePayload = (nodeName: string): NodePayload => {
+  return {
+    code: '',
+    language: Languages[0] as Language,
+    type: 'controller',
+    basePath: '/api',
+    description: '',
+    endpoints: [defaultEndpoint()]
+  }
+};
+
+export const HttpMethods = [
+  "GET", "POST", "PUT", "PATCH", "DELETE"
+];
+
+export const Languages = [
+  "javascript", "java", "python"
+];
+
+export const ParameterTypes = ["STRING", "INTEGER", "BOOLEAN", "JSON", ]

@@ -10,14 +10,13 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
 import { AuthService } from '../../services/auth.service';
 import { DividerModule } from 'primeng/divider';
 import { MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
 import { AppLogo } from '../../layout/component/app.logo';
 import { finalize } from 'rxjs';
 
 @Component({
     selector: 'app-login',
     standalone: true,
-    imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator, DividerModule, ToastModule, AppLogo],
+    imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator, DividerModule, AppLogo],
     template: `
         <app-floating-configurator />
         <div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-[100vw] overflow-hidden">
@@ -55,7 +54,6 @@ import { finalize } from 'rxjs';
                 </div>
             </div>
         </div>
-        <p-toast position="bottom-right" key="br" />
     `
 })
 export class Login implements OnInit {

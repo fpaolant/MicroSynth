@@ -10,6 +10,7 @@ import {
   EventEmitter,
   Input,
   signal,
+  OnDestroy,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 
@@ -32,15 +33,16 @@ import { ButtonModule } from "primeng/button";
 import { IconFieldModule } from "primeng/iconfield";
 import { InputIconModule } from "primeng/inputicon";
 import { SplitButtonModule } from "primeng/splitbutton";
+import { SplitterModule } from 'primeng/splitter';
 // customizations
 import { CustomSocketComponent } from "./custom-socket/custom-socket.component";
 import { CustomConnectionComponent } from "./custom-connection/custom-connection.component";
 import { CustomNodeComponent } from "./custom-node/custom-node.component";
 
 import { UniPortConnector } from "./util/uniport-connector";
-import { Connection, Node } from "./presets";
+import { Connection, defaultNodePayload, Node } from "./presets";
 import { ComputedSocketPosition } from "./util/util";
-import { AreaExtra, Schemes, Shape } from "./types";
+import { AreaExtra, NodePayload, Schemes, Shape } from "./types";
 import { DropdownChangeEvent, DropdownModule } from "primeng/dropdown";
 import { MinimapPlugin } from "rete-minimap-plugin";
 import {
@@ -61,8 +63,8 @@ import { TooltipModule } from "primeng/tooltip";
 import { UploadFileDialogComponent } from "../upload-file-dialog/upload-file-dialog.component";
 import { ConfirmationService, MessageService } from "primeng/api";
 import { ToastModule } from "primeng/toast";
-import { forkJoin, from, Observable, of } from "rxjs";
-import { finalize, switchMap, take } from "rxjs/operators";
+import { forkJoin, from, Observable, of, Subject } from "rxjs";
+import { distinctUntilChanged, finalize, switchMap, take, takeUntil } from "rxjs/operators";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { ButtonGroupModule } from "primeng/buttongroup";
 import { DialogModule } from "primeng/dialog";
@@ -71,6 +73,7 @@ import { SliderModule } from 'primeng/slider'
 import { MessageModule } from "primeng/message";
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { GenerateDiagramDialogComponentComponent } from "./generate-diagram-dialog-component/generate-diagram-dialog-component.component";
+import { EditorContextMenuComponent } from "./editor-context-menu/editor-context-menu.component";
 
 @Component({
   selector: "app-editor",
@@ -87,13 +90,14 @@ import { GenerateDiagramDialogComponentComponent } from "./generate-diagram-dial
     TooltipModule,
     UploadFileDialogComponent,
     DialogModule,
-    ToastModule,
     ConfirmDialogModule,
     InputTextModule,
     SliderModule,
     MessageModule,
     ProgressSpinnerModule,
-    GenerateDiagramDialogComponentComponent
+    SplitterModule,
+    GenerateDiagramDialogComponentComponent,
+    EditorContextMenuComponent
 ],
   providers: [MessageService, ConfirmationService],
   templateUrl: "./editor.component.html",
@@ -107,8 +111,8 @@ import { GenerateDiagramDialogComponentComponent } from "./generate-diagram-dial
   //   `,
   // ],
 })
-export class EditorComponent implements OnInit, AfterViewInit {
-  @ViewChild("editor", { static: true }) containerRef!: ElementRef;
+export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild("editor") containerRef!: ElementRef;
   injector = inject(Injector);
   messageService = inject(MessageService);
   confirmationService = inject(ConfirmationService);
@@ -134,19 +138,21 @@ export class EditorComponent implements OnInit, AfterViewInit {
   @Output() areaEventsChange = new EventEmitter<any>();
 
   @Output() nodeAdded = new EventEmitter<Node>();
-  @Output() nodeSelected = new EventEmitter<Node>();
+  @Output() nodeSelected = new EventEmitter<Node | null>();
   @Output() nodeRemoved = new EventEmitter<Node>();
   @Output() nodeUpdated = new EventEmitter<Node>();
 
   @Output() connectionAdded = new EventEmitter<Connection<Node, Node>>();
   @Output() connectionRemoved = new EventEmitter<Connection<Node, Node>>();
-  @Output() connectionSelected = new EventEmitter<Connection<Node, Node>>();
+  @Output() connectionSelected = new EventEmitter<Connection<Node, Node>| null>();
   @Output() connectionUpdated = new EventEmitter<Connection<Node, Node>>();
 
   @Output() editorAreaCleared = new EventEmitter<void>();
   @Output() onSave = new EventEmitter<string>();
   @Output() onGenerate = new EventEmitter<any>();
   @Output() onDockerDownload = new EventEmitter<any>();
+
+  private destroy$ = new Subject<void>();
 
 
   public editor!: NodeEditor<Schemes>;
@@ -169,16 +175,18 @@ export class EditorComponent implements OnInit, AfterViewInit {
   diagramTouched = false;
   loadingDiagram = signal(false);
 
+  selectedConn: Connection<Node, Node> | null = null;
+  selectedNode: Node | null = null;
+
+  maxConnectionWeight:number = 1;
+
   get canExport() {
     return !this.diagramTouched && this.editor.getNodes().length > 0  && !hasCycle(this.editor.getNodes(), this.editor.getConnections())
   }
 
-
-
-
   ngOnInit(): void {
     this.editor = new NodeEditor<Schemes>();
-  }
+  }  
 
   ngAfterViewInit(): void {
     const el = this.containerRef.nativeElement;
@@ -186,6 +194,11 @@ export class EditorComponent implements OnInit, AfterViewInit {
     if (el) {
       this.buildEditor(el, this.injector);
     }
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private async buildEditor(container: HTMLElement, injector: Injector) {
@@ -216,26 +229,40 @@ export class EditorComponent implements OnInit, AfterViewInit {
 
     // listener of events in area
     this.area.addPipe((context) => {
-      if (context.type === "nodepicked")
+      if (context.type === "nodepicked"){
         this.nodeSelected.emit(this.editor.getNode(context.data.id));
-      if (context.type === "noderemoved")
+      }
+      if (context.type === "noderemoved"){
         this.nodeRemoved.emit(this.editor.getNode(context.data.id));
+        this.nodeSelected.emit(null);
+      }
       if (context.type === "nodecreated")
         this.nodeAdded.emit(this.editor.getNode(context.data.id));
 
-      if (context.type === "connectioncreated")
+      if (context.type === "connectioncreated"){
         this.connectionAdded.emit(context.data);
-      if (context.type === "connectionremoved")
+        this.connectionSelected.emit(null);
+      }
+      if (context.type === "connectionremoved"){
         this.connectionRemoved.emit(context.data);
+        this.connectionSelected.emit(null);
+      }
 
-      if (context.type === "cleared") this.editorAreaCleared.emit();
-
-      if (context.type === "cleared")
+      if (context.type === "pointerdown"){
+        this.connectionSelected.emit(null);
+        this.nodeSelected.emit(null);
+      }
+      if (context.type === "cleared") {
+        this.editorAreaCleared.emit();
+        this.connectionSelected.emit(null);
+        this.nodeSelected.emit(null);
         this.connectionExcludedFromCycleCheck = [];
+      }
 
       this.areaEventsChange.emit(context);
       return context;
     });
+
 
     // listen on events on the editor
     this.editor.addPipe(async (context) => {
@@ -294,6 +321,9 @@ export class EditorComponent implements OnInit, AfterViewInit {
       propertyChange: (key: string, value: any) => {
         this.diagramTouched = true;
       },
+      getNode(id: Schemes['Node']['id']): Schemes["Node"] {
+        return this.editor.getNode(id);
+      }
     };
 
     connectionPlugin.addPreset(
@@ -353,7 +383,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
             node.id,
             node.label,
             node.shape as Shape,
-            node.payload,
+            node.payload as NodePayload,
             node.weight
           )
         );
@@ -375,6 +405,8 @@ export class EditorComponent implements OnInit, AfterViewInit {
             click: this.connectionEvents.click,
             remove: this.connectionEvents.remove,
             propertyChange: this.connectionEvents.propertyChange,
+            targetNode: undefined,
+            sourceNode: undefined
           } as Connection<Node, Node>)
         );
 
@@ -393,11 +425,11 @@ export class EditorComponent implements OnInit, AfterViewInit {
 
     clear$
       .pipe(
+        takeUntil(this.destroy$),
         switchMap(() => loadData()),
         take(1),
         switchMap(() => of(this.reorder())),
         finalize(()=> {
-          console.log("finalize", action)
           if(action !== 'init') this.diagramTouched = true;
           this.loadingDiagram.set(false);
         })
@@ -406,6 +438,10 @@ export class EditorComponent implements OnInit, AfterViewInit {
         next: () => {
           // this.reorder().then(()=> {
           //   this.loadingDiagram.set(false);
+          this.editor.getConnections().forEach(c=>{
+            c.targetNode = this.editor.getNode(c.target);
+            c.sourceNode = this.editor.getNode(c.source);
+          })
             
           // });
           if (action === "import") {
@@ -413,6 +449,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
               severity: "success",
               summary: "Graph loaded successfully",
             });
+            this.diagramTouched = true;
           }
 
           if (action === "generate") {
@@ -420,6 +457,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
               severity: "success",
               summary: "Graph generated successfully",
             });
+            this.diagramTouched = true;
           }
         },
         error: (err) => {
@@ -470,12 +508,13 @@ export class EditorComponent implements OnInit, AfterViewInit {
 
     AreaExtensions.selectableNodes(area, selector, { accumulating });
 
-    function unselectConnection(c: Schemes["Connection"]) {
+    const unselectConnection = (c: Schemes["Connection"]) => {
       c.selected = false;
+      this.connectionSelected.emit(null);
       area.update("connection", c.id);
     }
 
-    function selectConnection(c: Schemes["Connection"]) {
+    const selectConnection = (c: Schemes["Connection"]) => {
       selector.add(
         {
           id: c.id,
@@ -489,6 +528,18 @@ export class EditorComponent implements OnInit, AfterViewInit {
       );
       c.selected = true;
       area.update("connection", c.id);
+
+      // calculate sourceNode max weight
+      let totalWeight = this.editor.getConnections()
+        .filter(conn =>
+          conn.sourceNode?.id === c.sourceNode?.id
+        )
+        .reduce((sum, conn) => sum + (conn.weight ?? 0), 0);
+
+      this.maxConnectionWeight = Number(
+        (Math.max(0, 1.0 - totalWeight+ c.weight)).toFixed(1)) ;
+      this.connectionSelected.emit(c);
+      this.nodeSelected.emit(null);
     }
 
     return { selectConnection, unselectConnection };
@@ -497,7 +548,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
   private createMinimapPlugin() {
     const minimap = new MinimapPlugin<Schemes>({
       boundViewport: true,
-      minDistance: 1500,
+      minDistance: 1500
     });
     this.area.use(minimap);
     this.renderPlugin.addPreset(AngularPresets.minimap.setup({ size: 150 }));
@@ -515,8 +566,8 @@ export class EditorComponent implements OnInit, AfterViewInit {
     id: string = getUID(),
     label: string = "Node A",
     shape: Shape = "circle",
-    payload: any = { code: "{}", language: "json" },
-    weight: number = 0
+    payload: NodePayload = defaultNodePayload(label),
+    weight: number = 0.0
   ): Observable<boolean> {
     const node = new Node(label, shape, {
       remove: async (data: Node) => {
@@ -543,6 +594,27 @@ export class EditorComponent implements OnInit, AfterViewInit {
     node.shape = shape;
 
     return from(this.editor.addNode(node));
+  }
+
+  onConnectionChange(connection: Connection<Node, Node>) {
+    let connectionToUpdate = this.editor.getConnection(connection.id)
+    if(connectionToUpdate) {
+      connectionToUpdate.label = connection.label;
+      connectionToUpdate.weight = connection.weight;
+      connectionToUpdate.payload = connection.payload;
+      this.diagramTouched = true;
+    }
+  }
+
+  onNodeChange(node: Node) {
+    let nodeToUpdate = this.editor.getNode(node.id);
+    if(nodeToUpdate) {
+      nodeToUpdate.label = node.label;
+      nodeToUpdate.weight = node.weight;
+      nodeToUpdate.payload = node.payload;
+      this.diagramTouched = true;
+    }
+    
   }
 
   async removeNode(id: string) {
@@ -629,6 +701,7 @@ export class EditorComponent implements OnInit, AfterViewInit {
     const nodes = this.editor.getNodes();
     const connections = this.editor.getConnections();
     let json = JSON.stringify({ nodes, connections }, null, 2);
+
     if (this.exportFormatHandler !== null) {
       json = this.exportFormatHandler(json);
     }

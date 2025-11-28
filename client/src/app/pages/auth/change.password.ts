@@ -10,15 +10,13 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
 import { AuthService, ChangePasswordRequest } from '../../services/auth.service';
 import { DividerModule } from 'primeng/divider';
 import { MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
 import { AppLogo } from '../../layout/component/app.logo';
 import { CommonModule } from '@angular/common';
-import { timeout } from 'rxjs';
 
 @Component({
     selector: 'app-change-password',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator, DividerModule, ToastModule, AppLogo],
+    imports: [CommonModule, ReactiveFormsModule, ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator, DividerModule, AppLogo],
     template: `
         <app-floating-configurator />
         <div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-[100vw] overflow-hidden">
@@ -87,7 +85,6 @@ import { timeout } from 'rxjs';
                 </div>
             </div>
         </div>
-        <p-toast position="bottom-right" key="br" />
     `
 })
 export class ChangePassword implements OnInit {

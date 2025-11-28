@@ -27,15 +27,6 @@
 >
   <p-button
     (pointerdown)="$event.stopImmediatePropagation()"
-    (click)="popoverEditConn.toggle($event)"
-    icon="pi pi-pencil"
-    [rounded]="true"
-    [text]="true"
-    size="small"
-    severity="secondary"
-  />
-  <p-button
-    (pointerdown)="$event.stopImmediatePropagation()"
     (click)="remove()"
     icon="pi pi-times"
     [rounded]="true"
@@ -55,39 +46,6 @@
     tooltipPosition="bottom"
   />
 </div>
-
-<p-popover #popoverEditConn>
-  <div class="flex flex-col">
-    <div>
-      <span class="font-medium text-surface-900 dark:text-surface-0 block mb-2"
-        >Name</span
-      >
-      <p-inputgroup>
-        <input pInputText [(ngModel)]="labelDraft" class="w-[25rem]" />
-        <p-inputgroup-addon>
-          <button
-            pButton
-            icon="pi pi-save"
-            (click)="saveLabel()"
-          ></button>
-        </p-inputgroup-addon>
-      </p-inputgroup>
-      <span
-        class="font-medium text-surface-900 dark:text-surface-0 block mb-2 mt-6"
-        >Weight</span
-      >
-      <p-inputnumber
-        [(ngModel)]="data.weight"
-        mode="decimal"
-        [showButtons]="true"
-        inputId="minmax-buttons"
-        [min]="0"
-        [max]="100"
-        (ngModelChange)="changeWeight()"
-      />
-    </div>
-  </div>
-</p-popover>
 
 <p-dialog
   appendTo="body"
@@ -113,7 +71,7 @@
       [code]="payloadDraft"
       [language]="payloadLanguageDraft"
       (codeChange)="payloadDraft = $event"
-      (languageChange)="payloadLanguageDraft = $event"
+      (languageChange)="onLanguageChange($event)"
       (hasErrorsChange)="hasPayloadCodeErrors = $event"
     ></app-code-editor>
   </div>

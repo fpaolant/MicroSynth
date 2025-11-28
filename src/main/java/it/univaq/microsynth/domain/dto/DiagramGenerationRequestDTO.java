@@ -16,7 +16,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @Schema(description = "DTO to represent a generate diagram request")
-public class GenerationParamsDTO {
+public class DiagramGenerationRequestDTO {
     @Min(value = 1, message = "Number of nodes must be at least 1")
     private int nodes;
 

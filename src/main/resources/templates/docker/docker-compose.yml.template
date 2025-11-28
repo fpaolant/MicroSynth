@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  ${projectName}:
+    build: ./generated
+    ports:
+      - "${port}:8080"
+    environment:
+      - SERVICE_NAME=${projectName}

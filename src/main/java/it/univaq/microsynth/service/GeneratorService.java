@@ -1,15 +1,12 @@
 package it.univaq.microsynth.service;
 
+import it.univaq.microsynth.domain.dto.BundleGenerationRequestDTO;
+import it.univaq.microsynth.domain.dto.DiagramDTO;
 
-import it.univaq.microsynth.domain.Diagram;
-import it.univaq.microsynth.domain.dto.GenerationParamsDTO;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
+import java.io.File;
+import java.util.List;
 
 public interface GeneratorService {
-
-    Diagram generate(GenerationParamsDTO params);
-    ByteArrayOutputStream exportDockerCompose(Diagram diagram) throws IllegalArgumentException, IOException;
+    File generateBundle(List<BundleGenerationRequestDTO> requests) throws Exception;
+    List<BundleGenerationRequestDTO> convertGraphToRequests(DiagramDTO graph);
 }

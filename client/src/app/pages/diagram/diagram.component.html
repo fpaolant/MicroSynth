@@ -14,9 +14,9 @@
   </ng-template>
 </p-breadcrumb>
 
-<div class="card">
+<div>
   <div
-    class="font-semibold text-xl mb-4"
+    class="font-semibold text-xl m-4"
     (click)="changeName = true"
     *ngIf="!changeName"
   >
@@ -37,7 +37,7 @@
     </p-inputgroup>
   </div>
   
-  <div class="h-full w-full p-6">
+  <div class="h-full w-full">
     <app-editor
       #editor
       [title]="diagram?.name"
@@ -51,4 +51,3 @@
   </div>
 </div>
 
-<p-toast position="bottom-right" key="br" />

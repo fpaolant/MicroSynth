@@ -5,23 +5,21 @@ import lombok.*;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 @EqualsAndHashCode
 @ToString
-public class DiagramData implements Serializable {
+public class ParameterValue<T> implements Serializable {
     @Serial
-    private static final long serialVersionUID = -294424037526113965L;
+    private static final long serialVersionUID = 7789940623071028026L;
 
     @NotNull
-    private List<Node> nodes;
+    private String name;
 
     @NotNull
-    private List<Connection> connections;
-
+    private T value;
 }
-

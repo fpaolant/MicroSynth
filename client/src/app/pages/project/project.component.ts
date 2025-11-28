@@ -8,7 +8,6 @@ import { DataViewModule } from 'primeng/dataview';
 import { ButtonModule } from 'primeng/button';
 import { AppLogo } from '../../layout/component/app.logo';
 import { Diagram, DiagramService } from '../../services/diagram.service';
-import { ToastModule } from 'primeng/toast';
 import { MessagesModule } from 'primeng/messages';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
@@ -16,7 +15,7 @@ import { InputGroupModule } from 'primeng/inputgroup';
 
 @Component({
   selector: 'app-project',
-  imports: [CommonModule, RouterModule, BreadcrumbModule, DataViewModule, ButtonModule, AppLogo, ToastModule, MessagesModule, ConfirmDialogModule, InputGroupAddonModule, InputGroupModule],
+  imports: [CommonModule, RouterModule, BreadcrumbModule, DataViewModule, ButtonModule, AppLogo, MessagesModule, ConfirmDialogModule, InputGroupAddonModule, InputGroupModule],
   providers: [ConfirmationService, MessageService],
   standalone: true,
   templateUrl: './project.component.html',
@@ -81,11 +80,14 @@ import { InputGroupModule } from 'primeng/inputgroup';
   }
 
   newDiagram() {
-    this.routerService.navigate(['/pages/diagram'], { state: { project: this.project() } });
+    const projectId = this.project()?.id;
+    this.routerService.navigate(['/pages/diagram',projectId,'new']);
   }
 
   selectDiagram(diagramId: string) {
-    this.routerService.navigate(['/pages/diagram', diagramId], { state: { project: this.project() } });
+    //this.routerService.navigate(['/pages/diagram', diagramId], { state: { project: this.project() } });
+    const projectId = this.project()?.id;
+    this.routerService.navigate(['/pages/diagram', projectId, diagramId]);
   }
 
   deleteDiagram(diagram: Diagram) {

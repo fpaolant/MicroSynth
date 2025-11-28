@@ -10,8 +10,8 @@ export default [
     { path: 'account', component: AccountPage, canActivate: [authGuard] },
     { path: 'projects', component: ProjectsPage, canActivate: [authGuard] },
     { path: 'project/:id', component: ProjectPage, canActivate: [authGuard] },
-    { path: 'diagram', component: DiagramPage, canActivate: [authGuard] },
-    { path: 'diagram/:id', component: DiagramPage, canActivate: [authGuard] },
+    // { path: 'diagram', component: DiagramPage, canActivate: [authGuard] },
+    { path: 'diagram/:projectId/:diagramId', component: DiagramPage, canActivate: [authGuard] },
 
     //{ path: 'admin', component: AdminPage, canActivate: [authGuard], data: { role: 'ADMIN' } },  
     { path: 'admin',

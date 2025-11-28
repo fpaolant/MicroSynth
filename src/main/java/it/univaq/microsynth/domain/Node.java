@@ -3,6 +3,7 @@ package it.univaq.microsynth.domain;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @AllArgsConstructor
@@ -12,6 +13,7 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @ToString
 public class Node implements Serializable {
+    @Serial
     private static final long serialVersionUID = -8030066578324371602L;
 
     @NotNull
@@ -24,8 +26,8 @@ public class Node implements Serializable {
     private String shape;
 
     @NotNull
-    private Payload payload;
+    private NodePayload payload;
 
     @NotNull
-    private Long weight;
+    private Double weight;
 }

@@ -6,9 +6,6 @@
 </div>
 
 <select [value]="language" (change)="onLanguageChange($event)">
-  <option value="javascript">JavaScript</option>
-  <option value="typescript">TypeScript</option>
-  <option value="python">Python</option>
-  <option value="java">Java</option>
-  <option value="json">JSON</option>
+
+  <option value="l" *ngFor="let l of languages">{{l | uppercase}}</option>
 </select>

@@ -3,6 +3,7 @@ package it.univaq.microsynth.domain;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @AllArgsConstructor
@@ -12,6 +13,7 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @ToString
 public class Connection implements Serializable {
+    @Serial
     private static final long serialVersionUID = -294424037526113965L;
 
     @NotNull
@@ -27,11 +29,11 @@ public class Connection implements Serializable {
     private boolean isLoop;
 
     @NotNull
-    private Long weight;
+    private Double weight;
 
     @NotNull
     private String label;
 
     @NotNull
-    private Payload payload;
+    private ConnectionPayload payload;
 }

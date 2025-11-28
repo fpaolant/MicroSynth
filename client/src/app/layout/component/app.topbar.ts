@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -66,7 +66,7 @@ import { AppLogo } from './app.logo';
             padding: 0 5px;
         } `
 })
-export class AppTopbar {
+export class AppTopbar implements OnInit {
     items!: MenuItem[];
 
     authService = inject(AuthService);
@@ -74,23 +74,26 @@ export class AppTopbar {
 
     username = this.authService.getUsername();
 
-    overlayMenuItems = [
-        {
-            label: 'My Profile', icon: 'pi pi-home', routerLink: ['/pages/account']
-        },
-        {
-            label: 'Change Password', icon: 'pi pi-home',
-            routerLink: ['/auth/change-password'],
-            queryParams: { returnUrl: this.router.url }
-        },
-        {
-            separator: true
-        },
-        { label: 'Exit', icon: 'pi pi-fw pi-sign-out', routerLink: ['/logout'] }
-    ];
+    overlayMenuItems: any = [];
 
 
     constructor(public layoutService: LayoutService) {}
+
+    ngOnInit(): void {
+        this.overlayMenuItems = [
+            {
+                label: 'My Profile', icon: 'pi pi-home', routerLink: ['/pages/account']
+            },
+            {
+                label: 'Change Password', icon: 'pi pi-home',
+                routerLink: ['/auth/change-password'],
+                queryParams: { returnUrl: this.router.url }
+            },
+            {
+                separator: true
+            },
+            { label: 'Exit', icon: 'pi pi-fw pi-sign-out', routerLink: ['/logout'] }]
+    }
 
     toggleDarkMode() {
         this.layoutService.layoutConfig.update((state) => ({ ...state, darkTheme: !state.darkTheme }));
