@@ -6,12 +6,11 @@ import {
   OnChanges,
   OnInit,
   ViewChild,
+  SimpleChanges,
 } from "@angular/core";
 import { ClassicPreset } from "rete";
 import { CommonModule, KeyValue } from "@angular/common";
 import { Popover, PopoverModule } from "primeng/popover";
-
-//import { RefComponentDirective } from "../../../directives/ref.component";
 import { RefDirective } from "rete-angular-plugin/19";
 import { Languages, Node } from "../presets";
 import { FormsModule } from "@angular/forms";
@@ -70,14 +69,21 @@ export class CustomNodeComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
-    this.payloadDraft = this.data.payload?.code || "";
-    this.payloadLanguageDraft = this.data.payload?.language || Languages[0];
-    this.labelMaxlength =
-      shapes.find((s) => s.value === this.data.shape)?.labelMaxLength || 5;
+    // this.payloadDraft = this.data.payload?.code || "";
+    // this.payloadLanguageDraft = this.data.payload?.language || Languages[0];
+    // this.labelMaxlength =
+    //   shapes.find((s) => s.value === this.data.shape)?.labelMaxLength || 5;
   }
 
-  ngOnChanges(): void {
-    if (!this.data.selected === false) this.overlayEdit?.hide();
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['data'] && this.data) {
+      this.payloadDraft = this.data.payload?.code || "";
+      this.payloadLanguageDraft = this.data.payload?.language || Languages[0];
+      this.labelMaxlength =
+        shapes.find((s) => s.value === this.data.shape)?.labelMaxLength || 5;
+    }
+
+    if (!!this.data.selected) this.overlayEdit?.hide();
     this.cdr.detectChanges();
     requestAnimationFrame(() => this.rendered());
     this.seed++; // force render sockets

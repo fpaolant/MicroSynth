@@ -9,7 +9,7 @@ import { ToastModule } from 'primeng/toast';
     imports: [RouterModule, ToastModule],
     template: `
         <router-outlet></router-outlet>
-        <p-toast position="bottom-right" key="br" />
+        <p-toast appendTo="body" position="bottom-right" key="br" />
     `
 })
 export class AppComponent {

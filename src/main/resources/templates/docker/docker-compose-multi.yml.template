@@ -6,6 +6,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - "{{this.port}}:8080"
+{{#if this.outgoingServices}}
+    environment:
+{{#each this.outgoingServices}}
+      {{this.env}}: http://{{this.service}}:8080
+{{/each}}
+{{/if}}
+
 {{/each}}
 
   locust:

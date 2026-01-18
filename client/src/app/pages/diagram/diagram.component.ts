@@ -1,5 +1,6 @@
 import { CommonModule } from "@angular/common";
 import {
+  AfterViewInit,
   Component,
   inject,
   OnInit,
@@ -24,6 +25,7 @@ import {
 import { InputGroupAddon } from "primeng/inputgroupaddon";
 import { InputGroupModule } from "primeng/inputgroup";
 import { ExportService } from "../../services/export.service";
+import { LayoutService } from "../../layout/service/layout.service";
 
 @Component({
   selector: "app-diagram",
@@ -41,7 +43,7 @@ import { ExportService } from "../../services/export.service";
   templateUrl: "./diagram.component.html",
   styleUrl: "./diagram.component.scss",
 })
-export class DiagramPage implements OnInit {
+export class DiagramPage implements OnInit, AfterViewInit {
   @ViewChild("editor") editor!: EditorComponent;
 
   // services
@@ -49,6 +51,7 @@ export class DiagramPage implements OnInit {
   diagramService = inject(DiagramService);
   exportService = inject(ExportService);
   messageService = inject(MessageService);
+  layoutService = inject(LayoutService);
 
   // breadcrumbs
   items = signal<MenuItem[]>([]);
@@ -69,15 +72,13 @@ export class DiagramPage implements OnInit {
   
 
 
-  constructor(
-    private route: ActivatedRoute,
-  ) {
+  constructor(private router: Router, private route: ActivatedRoute) {
     this.items.set([
       { icon: "pi pi-home", route: "/" },
       { label: "Projects", route: "/pages/projects" },
     ]);
   }
-
+  
   ngOnInit(): void {
     const projectId = this.route.snapshot.paramMap.get('projectId');
     if (projectId) {
@@ -91,15 +92,17 @@ export class DiagramPage implements OnInit {
       });
     }
   }
+  
+  ngAfterViewInit(): void {
+    this.layoutService.onMenuToggle()
+  }
 
   loadProject(id: string) {
     this.projectService.getProject(id).subscribe({
       next: (project) => {
         this.project = project;
-
         // Recupera l'id del diagramma (se presente nei parametri)
         const diagramId = this.route.snapshot.paramMap.get('diagramId');
-        console.log("DID", diagramId)
 
         // find diagram in project or create an empty one
         this.diagram =
@@ -158,22 +161,31 @@ export class DiagramPage implements OnInit {
         summary: "Error",
         detail: "Failed to save diagram",
       });
+      return;
     }
 
     this.diagram = {
       id: this.diagram?.id || "",
       name: this.diagram?.name || "New Diagram",
-      data: diagramData,
+      data: diagramData
     };
 
     /*
       Save diagram to endpoint
     */
-    this.diagramService
-      .updateDiagram(this.project!.id, this.diagram!)
+    this.diagramService.updateDiagram(this.project!.id, this.diagram!)
       .subscribe({
         next: (response) => {
           this.diagram!.id = response.id;
+          // url replacement with diagram id in case of new diagram
+          this.router.navigate(
+            [
+              "/pages/diagram",
+              this.project!.id,
+              response.id
+            ],
+            { replaceUrl: true }   // <-- evita che la vecchia URL resti nella history
+          );
 
           this.messageService.add({
             severity: "success",
@@ -182,7 +194,7 @@ export class DiagramPage implements OnInit {
           });
         },
         error: (error) => {
-          console.error("Error updating diagram:", error);
+          console.error("Error Saving diagram:", error);
           this.messageService.add({
             severity: "error",
             summary: "Error",
@@ -288,6 +300,7 @@ export class DiagramPage implements OnInit {
 
   onDockerDownload($event: any) {
     if(!this.diagram) return;
+    console.log("Exporting docker compose for diagram",this.project?.id, this.diagram.id);
     this.exportService.exportDockerCompose(this.project!.id, this.diagram.id!).subscribe({
       next: (blob: Blob) => {
         // Crea un oggetto URL temporaneo per il blob
@@ -306,6 +319,11 @@ export class DiagramPage implements OnInit {
       },
       error: (err) => {
         console.error('Download error:', err);
+        this.messageService.add({
+          severity: "error",
+          summary: "Error",
+          detail: "Failed to generate Docker Compose export",
+        });
       }
     });
   }

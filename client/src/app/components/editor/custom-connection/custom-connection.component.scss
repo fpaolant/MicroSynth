@@ -25,11 +25,21 @@ svg {
   stroke: transparent;
 }
 
-.label {
+.label, .weight {
   position: absolute;
   //transform: translate(-50%, -50%);
   font-size: 0.8em;
   max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+.weight {
+  font-size: 0.8em;
+  max-width: 20px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

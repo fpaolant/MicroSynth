@@ -21,7 +21,7 @@ import java.util.*;
 @Service
 public class ProjectServiceImpl implements ProjectService {
 
-    private ProjectRepository projectRepository;
+    private final ProjectRepository projectRepository;
 
     public ProjectServiceImpl(ProjectRepository projectRepository) {
         this.projectRepository = projectRepository;
@@ -75,27 +75,27 @@ public class ProjectServiceImpl implements ProjectService {
                     Optional<Diagram> existingDiagramOpt = project.getDiagrams().stream()
                             .filter(diagram -> diagram.getId().equals(diagramDTO.getId()))
                             .findFirst();
-
+                    Diagram diagram;
                     if (existingDiagramOpt.isPresent()) {
-                        Diagram existingDiagram = existingDiagramOpt.get();
-                        existingDiagram.setName(diagramDTO.getName());
-                        existingDiagram.setData(diagramDTO.getData());
+                        diagram = existingDiagramOpt.get();
+                        diagram.setName(diagramDTO.getName());
+                        diagram.setData(diagramDTO.getData());
                         // Update other fields if needed
                     } else {
                         // Create a new diagram and add to the project
-                        Diagram newDiagram = new Diagram();
-                        newDiagram.setId(UUID.randomUUID().toString());
-                        newDiagram.setName(diagramDTO.getName());
-                        newDiagram.setData(diagramDTO.getData());
+                        diagram = new Diagram();
+                        diagram.setId(UUID.randomUUID().toString());
+                        diagram.setName(diagramDTO.getName());
+                        diagram.setData(diagramDTO.getData());
                         // Set other fields from diagramDTO as needed
-                        project.getDiagrams().add(newDiagram);
+                        project.getDiagrams().add(diagram);
                     }
 
                     // Save the updated project if necessary
                     projectRepository.save(project);
 
                     log.info("Updated project {} with diagram: {}", id, diagramDTO);
-                    return ResponseEntity.ok(new DocumentResponseDTO(project.getId()));
+                    return ResponseEntity.ok(new DocumentResponseDTO(diagram.getId()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -223,6 +223,7 @@ public class ProjectServiceImpl implements ProjectService {
                 existingEdges.add(edgeKey);
                 targetNode = nodes.stream().filter(n1 -> n1.getId().equals(targetId)).findFirst().orElse(null);
                 ConnectionPayload payload = generateRandomConnectionPayload(targetNode);
+                targetNode.getPayload().setInitiator(false);
                 String action = payload.getApiCall().getMethod() + "_" + payload.getApiCall().getPath().replaceAll("/", "");
                 connections.add(new Connection(
                         UUID.randomUUID().toString(),
@@ -259,16 +260,16 @@ public class ProjectServiceImpl implements ProjectService {
 
         // Generate random parameters
         List<Parameter> parameters = List.of(
-                Parameter.builder()
-                        .name("id")
-                        .type(ParameterType.STRING)
-                        .required(true)
-                        .build(),
-                Parameter.builder()
-                        .name("active")
-                        .type(ParameterType.BOOLEAN)
-                        .required(false)
-                        .build()
+            Parameter.builder()
+                    .name("id")
+                    .type(ParameterType.STRING)
+                    .required(true)
+                    .build(),
+            Parameter.builder()
+                    .name("active")
+                    .type(ParameterType.BOOLEAN)
+                    .required(false)
+                    .build()
         );
 
         String[] methods = { "GET", "POST" };
@@ -297,8 +298,7 @@ public class ProjectServiceImpl implements ProjectService {
                     """;
             default -> "// No code";
         };
-
-        payload.setCode(code);
+        payload.setInitiator(true);
 
         return payload;
     }

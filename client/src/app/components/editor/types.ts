@@ -54,6 +54,7 @@ export type Endpoint = {
   method: HttpMethods;
   parameters: Parameter[];
   responses: ApiResponse[];
+  code: string;
 }
 
 export type ApiCall = {
@@ -71,6 +72,7 @@ export type NodePayload = {
   basePath: string,
   description: string,
   endpoints?: Endpoint[];
+  initiator: boolean;
 }
 
 export type ConnectionPayload = {

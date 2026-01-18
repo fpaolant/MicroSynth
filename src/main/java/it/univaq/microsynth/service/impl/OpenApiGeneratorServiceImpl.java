@@ -4,6 +4,7 @@ import it.univaq.microsynth.domain.*;
 import it.univaq.microsynth.domain.dto.BundleGenerationRequestDTO;
 import it.univaq.microsynth.domain.dto.DiagramDTO;
 import it.univaq.microsynth.domain.dto.OutgoingCallDTO;
+import it.univaq.microsynth.domain.dto.OutgoingParamDTO;
 import it.univaq.microsynth.service.GeneratorService;
 import it.univaq.microsynth.util.TemplateUtils;
 import it.univaq.microsynth.util.ZipUtils;
@@ -12,10 +13,12 @@ import org.openapitools.codegen.DefaultGenerator;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -27,6 +30,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
         int portOffset = 0;
 
         for (BundleGenerationRequestDTO request : requests) {
+            // Create project directory
             Path projectDir = tempRootDir.resolve(sanitizeDockerServiceName(request.getProjectName()));
             Files.createDirectories(projectDir);
 
@@ -39,50 +43,21 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
             log.info("OpenAPI spec for " + request.getProjectName() + " written to " + openapiFile.toAbsolutePath());
             log.info("json: " + json);
 
-            // Generated output dir
-            Path outputDir = projectDir.resolve("generated");
-            Files.createDirectories(outputDir);
+            // generate single service from openapi
+            generateSingleService(request.getType(), openapiFile, projectDir, request);
 
             // Port
             int externalPort = 8081 + portOffset++;
             String port = String.valueOf(externalPort);
 
-            // Choose generator
-            String generatorName = mapGenerator(request.getType());
-
-            log.info("generatorName: " + generatorName);
-            // Generate code with OpenAPI Generator
-            org.openapitools.codegen.config.CodegenConfigurator configurator =
-                    new org.openapitools.codegen.config.CodegenConfigurator()
-                            .setInputSpec(openapiFile.toAbsolutePath().toString())
-                            .setGeneratorName(generatorName)
-                            .setOutputDir(outputDir.toAbsolutePath().toString())
-                            .addAdditionalProperty("interfaceOnly", "false")
-                            .addAdditionalProperty("generateSupportingFiles", "true")
-                            .addAdditionalProperty("useTags", "true");
-
-            new DefaultGenerator()
-                    .opts(configurator.toClientOptInput())
-                    .generate();
-
-            // Template Dockerfile in the root of single service
-            Map<String, Object> values = Map.of(
-                    "projectName", request.getProjectName(),
-                    "port", port
-            );
-
-            String dockerTemplate = switch (request.getType().toLowerCase()) {
-                case "python", "flask" -> "docker/Dockerfile-python.template";
-                case "java", "spring" -> "docker/Dockerfile-spring.template";
-                case "javascript", "node" -> "docker/Dockerfile-node.template";
-                default -> throw new IllegalArgumentException("Unsupported type: " + request.getType());
-            };
-
             // write dockerFile in the project directory
             TemplateUtils.writeRenderedTemplate(
-                    dockerTemplate,
+                    getDockerTemplate(request.getType()),
                     projectDir.resolve("Dockerfile"),
-                    values
+                    Map.of(
+                            "projectName", request.getProjectName(),
+                            "port", port
+                    )
             );
 
             // Add to services list for docker-compose
@@ -101,7 +76,6 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
         // Map services > port
         Map<String, Object> portByService = services.stream()
                 .collect(Collectors.toMap(s -> s.get("name"), s -> s.get("port")));
-
 
         // Generate Dockerfile for locust
         TemplateUtils.writeRenderedTemplate(
@@ -131,6 +105,42 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
         return zipFile;
     }
 
+    private static String getDockerTemplate(String type) {
+        return switch (type.toLowerCase()) {
+            case "python", "flask" -> "docker/Dockerfile-python.template";
+            case "java", "spring" -> "docker/Dockerfile-spring.template";
+            case "javascript", "node" -> "docker/Dockerfile-node.template";
+            default -> throw new IllegalArgumentException("Unsupported type: " + type);
+        };
+    }
+
+    private void generateSingleService(String type, Path openapiFile, Path projectDir, BundleGenerationRequestDTO request) throws IOException {
+        // Choose generator
+        String generatorName = mapGenerator(type);
+
+        log.info("generatorName: " + generatorName);
+
+        // Generated output dir
+        Path outputDir = projectDir.resolve("generated");
+        Files.createDirectories(outputDir);
+        // Generate code with OpenAPI Generator
+        org.openapitools.codegen.config.CodegenConfigurator configurator =
+                new org.openapitools.codegen.config.CodegenConfigurator()
+                        .setInputSpec(openapiFile.toAbsolutePath().toString())
+                        .setGeneratorName(generatorName)
+                        .setTemplateDir("src/main/resources/templates/openapi/custom/" + generatorName)
+                        .setOutputDir
+                                (outputDir.toAbsolutePath().toString())
+                        .addAdditionalProperty("interfaceOnly", "false")
+                        .addAdditionalProperty("delegatePattern", "false")
+                        .addAdditionalProperty("generateSupportingFiles", "true")
+                        .addAdditionalProperty("useTags", "true")
+                        .addAdditionalProperty("outgoingCalls", request.getOutgoingCalls());
+
+        new DefaultGenerator()
+                .opts(configurator.toClientOptInput())
+                .generate();
+    }
 
     public List<BundleGenerationRequestDTO> convertGraphToRequestsinit(DiagramDTO diagram) {
         List<BundleGenerationRequestDTO> requests = new ArrayList<>();
@@ -223,7 +233,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
         input = input.replaceAll("^/+", "");
         // Sostituisce tutti i caratteri non alfanumerici con underscore
         input = input.replaceAll("[^A-Za-z0-9]", "_");
-        // Aggiunge "get" se il metodo era get (puoi fare camelCase se vuoi)
+        // Aggiunge "get" se il metodo era get
         return input;
     }
 
@@ -260,7 +270,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                 String method = ep.getMethod() == null || ep.getMethod().isEmpty() ? "get" : ep.getMethod().toLowerCase();
 
                 // Costruzione parametri OpenAPI validi
-                List<Map<String, Object>> parameters = ep.getParameters().stream().map(p -> Map.<String,Object>of(
+                List<Map<String, Object>> parameters = ep.getParameters().stream().map(p -> Map.of(
                         "name", p.getName(),
                         "in", "query", // puoi cambiare in "path" se necessario
                         "required", p.isRequired(),
@@ -324,14 +334,17 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                 ApiCall api = cp.getApiCall();
 
                 OutgoingCallDTO call = new OutgoingCallDTO();
+                call.setOperationId(
+                        sanitize(api.getPath() + "-" + api.getMethod().toLowerCase())
+                );
                 call.setTargetService(sanitizeDockerServiceName(targetNode.getLabel()));
                 call.setHttpMethod(api.getMethod());
                 call.setPath(api.getPath());
                 call.setWeight(c.getWeight());
 
-                Map<String, Object> params = new HashMap<>();
+                List<OutgoingParamDTO> params = new ArrayList<>();
                 for (ParameterValue<?> pv : api.getParameterValues()) {
-                    params.put(pv.getName(), pv.getValue());
+                    params.add(new OutgoingParamDTO(pv.getName(), pv.getValue()));
                 }
                 call.setParameters(params);
 
@@ -343,6 +356,5 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
     }
 
 }
-
 
 

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from "@angular/core";
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { MonacoEditorModule } from "ngx-monaco-editor-v2";
 import { FormsModule } from "@angular/forms";
@@ -13,7 +13,7 @@ import { Language } from "../editor/types";
   templateUrl: "./code-editor.component.html",
   styleUrl: "./code-editor.component.scss",
 })
-export class CodeEditorComponent implements AfterViewInit, OnDestroy {
+export class CodeEditorComponent implements AfterViewInit, OnChanges, OnDestroy {
   private _code: string = "";
   @Input()
     set code(value: string) {
@@ -57,6 +57,22 @@ export class CodeEditorComponent implements AfterViewInit, OnDestroy {
     });
 
     this.resizeObserver.observe(this.editorContainerRef.nativeElement);
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['language'] && this.editorInstance) {
+      const model = this.editorInstance.getModel();
+      if (model) {
+        monaco.editor.setModelLanguage(model, this.language);
+      }
+    }
+  
+    if (changes['code'] && this.editorInstance) {
+      const model = this.editorInstance.getModel();
+      if (model && model.getValue() !== this.code) {
+        model.setValue(this.code);
+      }
+    }
   }
 
   ngOnDestroy(): void {

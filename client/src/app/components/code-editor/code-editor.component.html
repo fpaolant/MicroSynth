@@ -5,7 +5,10 @@
   </ngx-monaco-editor>
 </div>
 
-<select [value]="language" (change)="onLanguageChange($event)">
-
-  <option value="l" *ngFor="let l of languages">{{l | uppercase}}</option>
+<select 
+  [ngModel]="language" 
+  (ngModelChange)="onLanguageChange($event)">
+  <option *ngFor="let l of languages" [value]="l">
+    {{ l | uppercase }}
+  </option>
 </select>

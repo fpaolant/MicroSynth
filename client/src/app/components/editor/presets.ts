@@ -1,7 +1,6 @@
 import { ClassicPreset } from "rete";
 import { ApiCall, ApiResponse, ConnectionPayload, Endpoint, Language, NodePayload, Parameter, ParameterValue, Schemes, Shape } from "./types";
 import { CurveFactory } from "d3-shape";
-import { languages } from "monaco-editor";
 
 
 export class Socket extends ClassicPreset.Socket {
@@ -81,7 +80,7 @@ export const defaultApiCall = (): ApiCall => ({
   parameterValues: [defaultParameterValue()]
 });
 
-export const defaultConnectionPayload = (label: string): ConnectionPayload  => { 
+export const defaultConnectionPayload = (): ConnectionPayload  => {
   return {
     code: '',
     language: Languages[0] as Language,
@@ -110,17 +109,19 @@ export const defaultEndpoint = (): Endpoint => ({
   summary: 'getObject description',
   method: 'GET',
   parameters: [defaultParameter()],
-  responses: [defaultApiResponse()]
+  responses: [defaultApiResponse()],
+  code: ''
 });
 
-export const defaultNodePayload = (nodeName: string): NodePayload => {
+export const defaultNodePayload = (): NodePayload => {
   return {
     code: '',
     language: Languages[0] as Language,
     type: 'controller',
     basePath: '/api',
     description: '',
-    endpoints: [defaultEndpoint()]
+    endpoints: [defaultEndpoint()],
+    initiator: false
   }
 };
 

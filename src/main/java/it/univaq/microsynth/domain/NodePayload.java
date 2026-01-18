@@ -19,9 +19,6 @@ public class NodePayload implements Serializable {
     private static final long serialVersionUID = 155747012485606274L;
 
     @NotNull
-    private String code = "";
-
-    @NotNull
     private String language = "javascript"; // javascript, java, python
 
     private String type = "";        // controller
@@ -30,4 +27,6 @@ public class NodePayload implements Serializable {
 
     private List<Endpoint> endpoints = new ArrayList<>();
 
+    @NotNull
+    private Boolean initiator = false;
 }

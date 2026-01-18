@@ -47,13 +47,8 @@ import { DropdownChangeEvent, DropdownModule } from "primeng/dropdown";
 import { MinimapPlugin } from "rete-minimap-plugin";
 import {
   ConnectionPathPlugin,
-  Transformers,
 } from "rete-connection-path-plugin";
 import {
-  curveStep,
-  curveMonotoneX,
-  curveLinear,
-  CurveFactory,
   curveNatural,
 } from "d3-shape";
 import { pathTransformer, useTransformerUpdater } from "./util/path";
@@ -62,9 +57,8 @@ import { DiagramData } from "../../services/diagram.service";
 import { TooltipModule } from "primeng/tooltip";
 import { UploadFileDialogComponent } from "../upload-file-dialog/upload-file-dialog.component";
 import { ConfirmationService, MessageService } from "primeng/api";
-import { ToastModule } from "primeng/toast";
 import { forkJoin, from, Observable, of, Subject } from "rxjs";
-import { distinctUntilChanged, finalize, switchMap, take, takeUntil } from "rxjs/operators";
+import { finalize, switchMap, take, takeUntil } from "rxjs/operators";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { ButtonGroupModule } from "primeng/buttongroup";
 import { DialogModule } from "primeng/dialog";
@@ -102,14 +96,6 @@ import { EditorContextMenuComponent } from "./editor-context-menu/editor-context
   providers: [MessageService, ConfirmationService],
   templateUrl: "./editor.component.html",
   styleUrl: "./editor.component.scss"
-  // styles: [
-  //   `
-  //     .editor-container {
-  //       width: 100%;
-  //       height: calc(100vh - 24rem);
-  //     }
-  //   `,
-  // ],
 })
 export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild("editor") containerRef!: ElementRef;
@@ -564,7 +550,7 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
   //
   addNode(
     id: string = getUID(),
-    label: string = "Node A",
+    label: string = "S_" + (this.editor.getNodes().length + 1),
     shape: Shape = "circle",
     payload: NodePayload = defaultNodePayload(label),
     weight: number = 0.0
@@ -592,6 +578,9 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     node.weight = weight;
     node.payload = payload;
     node.shape = shape;
+    // if(this.editor.getNodes().length == 0) {
+    //   node.payload.initiator = true;
+    // }
 
     return from(this.editor.addNode(node));
   }
@@ -614,7 +603,6 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
       nodeToUpdate.payload = node.payload;
       this.diagramTouched = true;
     }
-    
   }
 
   async removeNode(id: string) {
@@ -665,7 +653,8 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   save() {
-    this.onSave.emit(this.exportAsJson());
+    const json = this.exportAsJson();
+    this.onSave.emit(json);
     this.diagramTouched = false;
   }
 

@@ -17,13 +17,26 @@
   tooltipPosition="top"
   [style.left.px]="point.x"
   [style.top.px]="point.y"
+  #nlabel
+/> 
+
+<p-tag
+  class="weight"
+  severity="danger"
+  (pointerdown)="$event.stopPropagation()"
+  (click)="data.click(data)"
+  [value]="data.weight+''"
+  pTooltip="data.weight"
+  tooltipPosition="top"
+  [style.left.px]="point.x"
+  [style.top.px]="point.y - 30"
 />
 
 <div
   class="flex flex-row actions"
   *ngIf="point && data.selected"
   [style.left.px]="point.x"
-  [style.top.px]="point.y + 60"
+  [style.top.px]="point.y + 40"
 >
   <p-button
     (pointerdown)="$event.stopImmediatePropagation()"
@@ -34,7 +47,7 @@
     size="small"
     severity="danger"
   />
-  <p-button
+  <!-- <p-button
     (pointerdown)="$event.stopImmediatePropagation()"
     (click)="showPayloadDialog()"
     icon="pi pi-code"
@@ -44,7 +57,7 @@
     severity="contrast"
     pTooltip="edit payload"
     tooltipPosition="bottom"
-  />
+  /> -->
 </div>
 
 <p-dialog
