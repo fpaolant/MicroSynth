@@ -80,7 +80,7 @@ export const defaultApiCall = (): ApiCall => ({
   parameterValues: [defaultParameterValue()]
 });
 
-export const defaultConnectionPayload = (): ConnectionPayload  => {
+export const defaultConnectionPayload = (label: string): ConnectionPayload  => {
   return {
     code: '',
     language: Languages[0] as Language,
@@ -113,7 +113,7 @@ export const defaultEndpoint = (): Endpoint => ({
   code: ''
 });
 
-export const defaultNodePayload = (): NodePayload => {
+export const defaultNodePayload = (nodeName: string): NodePayload => {
   return {
     code: '',
     language: Languages[0] as Language,
