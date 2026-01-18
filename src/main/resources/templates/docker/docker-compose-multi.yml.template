@@ -1,3 +1,4 @@
+# docker-compose-multi.yml.template
 services:
 {{#each services}}
   {{this.name}}:

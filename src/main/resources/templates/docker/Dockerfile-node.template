@@ -1,3 +1,4 @@
+# Dockerfile-node.template
 FROM node:20-alpine
 
 WORKDIR /app
