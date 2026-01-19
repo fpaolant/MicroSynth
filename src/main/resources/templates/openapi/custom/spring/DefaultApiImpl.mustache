@@ -1,0 +1,33 @@
+package {{apiPackage}}.impl;
+
+import {{apiPackage}}.DefaultApi;
+import {{invokerPackage}}.outgoing.OutgoingCallService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+@Service
+public class DefaultApiImpl implements DefaultApi {
+
+@Autowired
+private OutgoingCallService outgoingCallService;
+
+{{#operations}}
+    {{#operation}}
+        @Override
+        public ResponseEntity<Void> {{operationId}}(
+        {{#allParams}}{{paramName}}{{^-last}}, {{/-last}}{{/allParams}}
+            ) {
+
+            outgoingCallService.call(
+            "{{operationId}}",
+        {{#hasBodyParam}}{{bodyParam.paramName}}{{/hasBodyParam}}{{^hasBodyParam}}null{{/hasBodyParam}}
+            );
+
+            return ResponseEntity.ok().build();
+            }
+    {{/operation}}
+{{/operations}}
+
+    }

@@ -1,0 +1,88 @@
+'use strict';
+
+/**
+* outgoingCalls arriva da additionalProperties (CodegenConfigurator.addAdditionalProperty("outgoingCalls", ...))
+*
+* Struttura attesa per ogni call:
+* {
+*   operationId: string,
+*   targetService: string,
+*   httpMethod: string,
+*   path: string,
+*   port: number (di solito 8080 nel network docker),
+*   weight: number (0.1..1.0),
+*   parameters: [{ name, value }, ...]  // o oggetto equivalente
+* }
+*/
+
+const outgoingCalls = [
+{{#outgoingCalls}}
+    {
+    operationId: "{{operationId}}",
+    targetService: "{{targetService}}",
+    httpMethod: "{{httpMethod}}",
+    path: "{{path}}",
+    port: {{port}},
+    weight: {{weight}},
+    parameters: [
+    {{#parameters}}
+        { name: "{{name}}", value: {{{jsonValue}}} },
+    {{/parameters}}
+    ]
+    },
+{{/outgoingCalls}}
+];
+
+function shouldExecute(weight) {
+if (weight == null) return true;
+const w = Number(weight);
+if (Number.isNaN(w)) return true;
+return Math.random() <= w;
+}
+
+function buildUrl(call) {
+// Docker DNS: http://<serviceName>:<internalPort>
+    const base = `http://${call.targetService}:${call.port}`;
+    const p = call.path && call.path.startsWith('/') ? call.path : `/${call.path || ''}`;
+    return base + p;
+    }
+
+    function buildQuery(params) {
+    if (!params || !Array.isArray(params) || params.length === 0) return '';
+    const usp = new URLSearchParams();
+    for (const p of params) {
+    if (!p || p.name == null) continue;
+    usp.append(String(p.name), p.value == null ? '' : String(p.value));
+    }
+    const q = usp.toString();
+    return q ? `?${q}` : '';
+    }
+
+    async function callOutgoing(operationId, body) {
+    const call = outgoingCalls.find(c => c.operationId === operationId);
+    if (!call) return null;
+
+    if (!shouldExecute(call.weight)) return null;
+
+    const url = buildUrl(call) + buildQuery(call.parameters);
+
+    const method = (call.httpMethod || 'GET').toUpperCase();
+
+    const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' }
+    };
+
+    if (method !== 'GET' && method !== 'HEAD' && body != null) {
+    opts.body = JSON.stringify(body);
+    }
+
+    // Node 18+ ha fetch built-in (node:20 ok)
+    const res = await fetch(url, opts);
+    const text = await res.text();
+
+    // best-effort JSON parse
+    try { return JSON.parse(text); } catch (_) { return text; }
+    }
+
+    module.exports = { callOutgoing };

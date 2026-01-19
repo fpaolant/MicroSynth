@@ -10,6 +10,8 @@ import it.univaq.microsynth.util.TemplateUtils;
 import it.univaq.microsynth.util.ZipUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.codegen.DefaultGenerator;
+import org.openapitools.codegen.SupportingFile;
+import org.openapitools.codegen.config.CodegenConfigurator;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -44,7 +46,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
             log.info("json: " + json);
 
             // generate single service from openapi
-            generateSingleService(request.getType(), openapiFile, projectDir, request);
+            generateSingleService(request.getType(), openapiFile, projectDir, request.getOutgoingCalls());
 
             // Port
             int externalPort = 8081 + portOffset++;
@@ -107,14 +109,14 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
 
     private static String getDockerTemplate(String type) {
         return switch (type.toLowerCase()) {
-            case "python", "flask" -> "docker/Dockerfile-python.template";
+            case "python", "python-flask" -> "docker/Dockerfile-python.template";
             case "java", "spring" -> "docker/Dockerfile-spring.template";
-            case "javascript", "node" -> "docker/Dockerfile-node.template";
+            case "javascript", "node-express" -> "docker/Dockerfile-node.template";
             default -> throw new IllegalArgumentException("Unsupported type: " + type);
         };
     }
 
-    private void generateSingleService(String type, Path openapiFile, Path projectDir, BundleGenerationRequestDTO request) throws IOException {
+    private void generateSingleService(String type, Path openapiFile, Path projectDir, List<OutgoingCallDTO> outgoingCalls) throws IOException {
         // Choose generator
         String generatorName = mapGenerator(type);
 
@@ -123,9 +125,12 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
         // Generated output dir
         Path outputDir = projectDir.resolve("generated");
         Files.createDirectories(outputDir);
+
+        List<SupportingFile> supportingFiles = resolveSupportingFiles(generatorName);
+
         // Generate code with OpenAPI Generator
-        org.openapitools.codegen.config.CodegenConfigurator configurator =
-                new org.openapitools.codegen.config.CodegenConfigurator()
+        CodegenConfigurator configurator =
+                new CodegenConfigurator()
                         .setInputSpec(openapiFile.toAbsolutePath().toString())
                         .setGeneratorName(generatorName)
                         .setTemplateDir("src/main/resources/templates/openapi/custom/" + generatorName)
@@ -135,11 +140,49 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                         .addAdditionalProperty("delegatePattern", "false")
                         .addAdditionalProperty("generateSupportingFiles", "true")
                         .addAdditionalProperty("useTags", "true")
-                        .addAdditionalProperty("outgoingCalls", request.getOutgoingCalls());
+                        .addAdditionalProperty("outgoingCalls", outgoingCalls)
+                        .addAdditionalProperty("supportingFiles", supportingFiles);
 
         new DefaultGenerator()
                 .opts(configurator.toClientOptInput())
                 .generate();
+    }
+
+    private List<SupportingFile> resolveSupportingFiles(String generatorName) {
+
+        return switch (generatorName) {
+
+            case "nodejs-express" -> List.of(
+                    new SupportingFile(
+                            "outgoingClient.mustache",
+                            "",
+                            "outgoingClient.js"
+                    )
+            );
+
+            case "spring" -> List.of(
+                    new SupportingFile(
+                            "DefaultApiImpl.mustache",
+                            "src/main/java/{{packagePath}}/impl",
+                            "DefaultApiImpl.java"
+                    ),
+                    new SupportingFile(
+                            "OutgoingCallService.mustache",
+                            "src/main/java/{{packagePath}}/outgoing",
+                            "OutgoingCallService.java"
+                    )
+            );
+
+            case "python-flask" -> List.of(
+                    new SupportingFile(
+                            "outgoing_client.mustache",
+                            "",
+                            "outgoing_client.py"
+                    )
+            );
+
+            default -> List.of();
+        };
     }
 
     public List<BundleGenerationRequestDTO> convertGraphToRequestsinit(DiagramDTO diagram) {
@@ -223,7 +266,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
         return switch (type.toLowerCase()) {
             case "python" -> "python-flask";
             case "java" -> "spring";
-            case "javascript" -> "nodejs-express-server";
+            case "javascript" -> "nodejs-express";
             default -> throw new IllegalArgumentException("Unsupported type: " + type);
         };
     }
@@ -341,6 +384,9 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                 call.setHttpMethod(api.getMethod());
                 call.setPath(api.getPath());
                 call.setWeight(c.getWeight());
+                call.setBaseUrl(
+                        "http://" + call.getTargetService() + ":" + call.getPort()
+                );
 
                 List<OutgoingParamDTO> params = new ArrayList<>();
                 for (ParameterValue<?> pv : api.getParameterValues()) {

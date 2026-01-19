@@ -16,6 +16,7 @@ public class OutgoingCallDTO {
     private String targetService;
     private String httpMethod;
     private String path;
+    private String baseUrl;
     private int port = 8080;
     private double weight; // value between 0.1 and 1.0
     private List<OutgoingParamDTO> parameters;
