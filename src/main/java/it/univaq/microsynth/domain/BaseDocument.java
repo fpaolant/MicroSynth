@@ -11,6 +11,10 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+
+/**
+ * Base class for all documents in the database, with common fields like id, createdAt and updatedAt
+ */
 @Setter
 @Getter
 @EnableMongoAuditing

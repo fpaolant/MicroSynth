@@ -35,6 +35,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<Boolean> register(UserDTO userDTO) {
         String encodedPassword = passwordEncoder.encode(userDTO.getPassword());
@@ -55,6 +58,9 @@ public class AuthServiceImpl implements AuthService {
         return ResponseEntity.ok(true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<LoginResponseDTO> login(UserCredentialsDTO credentials) {
         Optional<User> user = userRepository.findByUsername(credentials.getUsername());
@@ -69,6 +75,9 @@ public class AuthServiceImpl implements AuthService {
         return ResponseEntity.ok(new LoginResponseDTO(token, user.get().getUsername()));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<LoginResponseDTO> refresh(String token) {
         if (!jwtService.validateToken(token)) {
@@ -86,6 +95,9 @@ public class AuthServiceImpl implements AuthService {
         return ResponseEntity.ok(new LoginResponseDTO(newToken, user.get().getUsername()));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<Boolean> changePassword(ChangePasswordDTO changePasswordDTO) {
         Optional<User> optionalUser = userRepository.findByUsername(changePasswordDTO.getUsername());

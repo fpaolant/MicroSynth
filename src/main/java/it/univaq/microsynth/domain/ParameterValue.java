@@ -6,6 +6,10 @@ import lombok.*;
 import java.io.Serial;
 import java.io.Serializable;
 
+
+/**
+ * Class to represent a parameter value, with its name and value
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

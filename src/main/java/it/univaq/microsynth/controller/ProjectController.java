@@ -26,6 +26,12 @@ public class ProjectController {
         this.projectService = projectService;
     }
 
+
+    /**
+     * Get all projects of the authenticated user
+     * @param paginatedRequestDTO pagination and sorting information
+     * @return list of user projects
+     */
     @Operation(summary = "Get all user projects", description = "return list of user projects")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -37,6 +43,11 @@ public class ProjectController {
         return projectService.getUserProjects(userName, paginatedRequestDTO);
     }
 
+    /**
+     * Get a project by id
+     * @param id project id
+     * @return project with the given id
+     */
     @Operation(summary = "Get project by id", description = "return project")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -49,6 +60,11 @@ public class ProjectController {
         return projectService.getProjectById(id, userName);
     }
 
+    /**
+     * Create a new project for the authenticated user
+     * @param projectDTO project to create
+     * @return created project id
+     */
     @Operation(summary = "Create project", description = "return created project id")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -62,6 +78,12 @@ public class ProjectController {
         return projectService.createProject(projectDTO, userName);
     }
 
+    /**
+     * Update a project by id
+     * @param id project id
+     * @param projectDTO project to update
+     * @return updated project id
+     */
     @Operation(summary = "Update project", description = "return updated project id")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -73,6 +95,11 @@ public class ProjectController {
         return projectService.updateProject(id, projectDTO);
     }
 
+    /**
+     * Delete a project by id
+     * @param id project id
+     * @return success message
+     */
     @Operation(summary = "Delete project", description = "return success message")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -83,9 +110,5 @@ public class ProjectController {
     public ResponseEntity<?> deleteProject(@PathVariable String id) {
         return projectService.deleteProject(id);
     }
-
-
-
-
 
 }

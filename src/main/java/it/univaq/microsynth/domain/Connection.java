@@ -6,6 +6,10 @@ import lombok.*;
 import java.io.Serial;
 import java.io.Serializable;
 
+
+/**
+ * Class to represent a connection between two nodes in the graph, with its source, target, weight and label
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

@@ -6,6 +6,10 @@ import lombok.*;
 import java.io.Serial;
 import java.io.Serializable;
 
+
+/**
+ * Class to represent the payload of a connection, with its API call and endpoint
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

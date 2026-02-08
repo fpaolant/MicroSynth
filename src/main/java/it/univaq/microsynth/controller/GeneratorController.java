@@ -25,6 +25,16 @@ public class GeneratorController {
     private final ProjectService projectService;
 
 
+    /**
+     * Generate a zip file containing the generated code based on the provided project and diagram IDs.
+     *
+     * @param projectId The ID of the project for which to generate the code.
+     * @param diagramId The ID of the diagram to be used for code generation.
+     * @return A ResponseEntity containing a FileSystemResource representing the generated zip file if successful, or an appropriate error response if the generation fails.
+     *         - Returns HTTP 200 OK with the generated zip file if generation is successful.
+     *         - Returns HTTP 404 Not Found if the specified diagram is not found for the given project.
+     *         - Returns HTTP 500 Internal Server Error for any other errors during the generation process.
+     */
     @GetMapping(value = "/generate/{project_id}/{diagram_id}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<FileSystemResource> generate(@PathVariable("project_id") String projectId, @PathVariable("diagram_id") String diagramId) {
 

@@ -8,6 +8,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Class to represent an API call, with its path, method and parameters
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

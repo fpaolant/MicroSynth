@@ -1,8 +1,10 @@
 package it.univaq.microsynth.domain.dto;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.*;
 
+/**
+ * DTO to represent an outgoing parameter
+ */
 @Getter
 @Setter
 @NoArgsConstructor

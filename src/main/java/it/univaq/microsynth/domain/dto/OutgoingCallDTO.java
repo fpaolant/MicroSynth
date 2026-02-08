@@ -5,6 +5,9 @@ import lombok.*;
 
 import java.util.List;
 
+/**
+ * DTO to represent an outgoing call in generate bundle request
+ */
 @Getter
 @Setter
 @AllArgsConstructor

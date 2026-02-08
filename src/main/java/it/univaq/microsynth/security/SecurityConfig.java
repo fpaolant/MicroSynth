@@ -21,6 +21,13 @@ public class SecurityConfig {
         this.jwtService = jwtService;
     }
 
+    /**
+     * Configures the security filter chain for the application, defining which endpoints are publicly accessible and which require authentication. It also sets up JWT authentication and disables CSRF protection since the application is stateless.
+     *
+     * @param http The HttpSecurity object used to configure the security settings for the application.
+     * @return A SecurityFilterChain object that defines the security configuration for the application.
+     * @throws Exception if an error occurs while configuring the security settings.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -44,16 +51,33 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Defines a PasswordEncoder bean that uses BCrypt for hashing passwords. This encoder will be used to securely store user passwords in the database and to verify password matches during authentication.
+     *
+     * @return A PasswordEncoder instance that uses BCrypt for password hashing.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Defines a JwtAuthenticationFilter bean that will be used to intercept incoming HTTP requests and validate the JWT token included in the Authorization header. If the token is valid, the filter will set the authentication in the SecurityContext.
+     *
+     * @return A JwtAuthenticationFilter instance that uses the JwtService for token validation and extraction of user information.
+     */
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter(jwtService);
     }
 
+    /**
+     * Defines an AuthenticationManager bean that is used to handle authentication requests. This bean is required for the authentication process and is obtained from the AuthenticationConfiguration.
+     *
+     * @param authConfig The AuthenticationConfiguration object that provides access to the AuthenticationManager.
+     * @return An AuthenticationManager instance that can be used to authenticate user credentials.
+     * @throws Exception if an error occurs while retrieving the AuthenticationManager from the AuthenticationConfiguration.
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();

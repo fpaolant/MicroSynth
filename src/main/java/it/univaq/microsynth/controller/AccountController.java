@@ -22,6 +22,15 @@ public class AccountController {
     }
 
 
+    /**
+     * Retrieves a paginated list of all users in the system.
+     *
+     * @param page    The page number to retrieve (0-based index).
+     * @param size    The number of users to include in each page.
+     * @param sortBy  The field by which to sort the users (e.g., "username", "email").
+     * @param sortDir The direction of sorting, either "asc" for ascending or "desc" for descending.
+     * @return A ResponseEntity containing a Page of UserResponseDTO objects, which includes the list of users and pagination metadata.
+     */
     @Operation(
             summary = "Get all users",
             description = "Return paginated list of users"
@@ -41,6 +50,12 @@ public class AccountController {
         return accountService.getAllUsers(paginatedRequestDTO);
     }
 
+    /**
+     * Retrieves a specific user by their unique identifier.
+     *
+     * @param id The unique identifier of the user to be retrieved.
+     * @return A ResponseEntity containing a UserResponseDTO object if the user is found, or an appropriate error response if not found.
+     */
     @Operation(summary = "Get user by id", description = "return user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -52,6 +67,12 @@ public class AccountController {
         return accountService.getUserById(id);
     }
 
+    /**
+     * Retrieves the roles associated with a specific user by their unique identifier.
+     *
+     * @param id The unique identifier of the user whose roles are to be retrieved.
+     * @return A List of Role objects representing the roles assigned to the specified user.
+     */
     @Operation(summary = "Get user roles", description = "return list of user roles")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -65,6 +86,12 @@ public class AccountController {
                 .toList());
     }
 
+    /**
+     * Creates a new user in the system based on the provided UserResponseDTO object.
+     *
+     * @param user An object containing the information for the new user to be created.
+     * @return A ResponseEntity containing a UserResponseDTO object if the user is successfully created, or an appropriate error response if there is an issue during creation (e.g., username already exists).
+     */
     @Operation(summary = "Create user", description = "return created user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -75,6 +102,12 @@ public class AccountController {
         return accountService.createUser(user);
     }
 
+    /**
+     * Creates a new user in the system based on the provided UserResponseDTO object.
+     *
+     * @param user An object containing the information for the new user to be created.
+     * @return A ResponseEntity containing a UserResponseDTO object if the user is successfully created, or an appropriate error response if there is an issue during creation (e.g., username already exists).
+     */
     @Operation(summary = "Update user", description = "return updated user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -86,6 +119,12 @@ public class AccountController {
         return accountService.updateUser(id, user);
     }
 
+    /**
+     * Deletes a user from the system based on their unique identifier.
+     *
+     * @param id The unique identifier of the user to be deleted.
+     * @return A ResponseEntity containing a String message indicating the result of the deletion operation, or an appropriate error response if the user is not found.
+     */
     @Operation(summary = "Delete user", description = "return message")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -97,6 +136,12 @@ public class AccountController {
         return accountService.deleteUser(id);
     }
 
+    /**
+     * Promotes a user to a higher role (e.g., from USER to ADMIN) based on their unique identifier.
+     *
+     * @param id The unique identifier of the user to be promoted.
+     * @return A ResponseEntity containing a String message indicating the result of the promotion operation, or an appropriate error response if the user is not found or if the promotion fails.
+     */
     @Operation(summary = "Promote user", description = "return message")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),
@@ -108,6 +153,12 @@ public class AccountController {
         return accountService.promoteUser(id);
     }
 
+    /**
+     * Demotes a user to a lower role (e.g., from ADMIN to USER) based on their unique identifier.
+     *
+     * @param id The unique identifier of the user to be demoted.
+     * @return A ResponseEntity containing a String message indicating the result of the demotion operation, or an appropriate error response if the user is not found or if the demotion fails.
+     */
     @Operation(summary = "Demote user", description = "return message")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "success"),

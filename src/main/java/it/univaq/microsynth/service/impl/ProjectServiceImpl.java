@@ -27,6 +27,9 @@ public class ProjectServiceImpl implements ProjectService {
         this.projectRepository = projectRepository;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<Page<Project>> getUserProjects(String userName, PaginatedRequestDTO paginatedRequestDTO) {
         Sort sort = paginatedRequestDTO.getSortDir().equalsIgnoreCase("asc") ? Sort.by(paginatedRequestDTO.getSortBy()).ascending() : Sort.by(paginatedRequestDTO.getSortBy()).descending();
@@ -36,6 +39,9 @@ public class ProjectServiceImpl implements ProjectService {
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<ProjectDTO> getProjectById(String id, String userName) {
         return projectRepository.findByIdAndOwner(id, userName)
@@ -44,6 +50,9 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<DiagramDTO> getDiagramById(String projectId, String diagramId) {
         return projectRepository.findById(projectId)
@@ -56,6 +65,9 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<DocumentResponseDTO> updateProject(String id, ProjectDTO projectDTO) {
         return projectRepository.findById(id)
@@ -67,6 +79,9 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<DocumentResponseDTO> updateDiagram(String id, DiagramDTO diagramDTO) {
         log.info("Updating project {} with diagram: {}", id, diagramDTO.toString());
@@ -100,6 +115,9 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<DocumentResponseDTO> createProject(ProjectDTO projectDTO, String userName) {
         Project project = ProjectMapper.INSTANCE.projectDTOtoProject(projectDTO);
@@ -107,6 +125,9 @@ public class ProjectServiceImpl implements ProjectService {
         return ResponseEntity.ok(new DocumentResponseDTO(project.getId()));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<?> deleteProject(String id) {
         return projectRepository.findById(id)
@@ -122,6 +143,9 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<?> deleteDiagram(String projectId, String diagramId) {
         log.info("Deleting diagram {} from project {}", diagramId, projectId);
@@ -144,6 +168,9 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Diagram generate(DiagramGenerationRequestDTO params) throws IllegalArgumentException {
         int n = params.getNodes();
@@ -222,6 +249,7 @@ public class ProjectServiceImpl implements ProjectService {
 
                 existingEdges.add(edgeKey);
                 targetNode = nodes.stream().filter(n1 -> n1.getId().equals(targetId)).findFirst().orElse(null);
+
                 ConnectionPayload payload = generateRandomConnectionPayload(targetNode);
                 targetNode.getPayload().setInitiator(false);
                 String action = payload.getApiCall().getMethod() + "_" + payload.getApiCall().getPath().replaceAll("/", "");
@@ -246,6 +274,13 @@ public class ProjectServiceImpl implements ProjectService {
         return diagram;
     }
 
+    /**
+     * Helper method to generate random NodePayload based on the node name and path.
+     * This method creates a payload with random language, endpoints, and parameters.
+     * @param nodeName The name of the node for which to generate the payload.
+     * @param path The path to be used in the generated endpoint.
+     * @return A NodePayload object with randomly generated content based on the provided node name and path.
+     */
     private NodePayload generateRandomNodePayload(String nodeName, String path) {
         NodePayload payload = new NodePayload();
         Random rand = new Random();
@@ -285,24 +320,18 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
 
         payload.setEndpoints(List.of(e1));
-
-        String code = switch (chosenLanguage) {
-            case "java" -> """
-                    
-                    """;
-            case "python" -> """
-                    
-                    """;
-            case "javascript" -> """
-                    
-                    """;
-            default -> "// No code";
-        };
         payload.setInitiator(true);
 
         return payload;
     }
 
+    /**
+     * Helper method to generate random ConnectionPayload based on the target node's endpoints.
+     * This method creates a payload with a random API call using one of the target node's endpoints.
+     * @param targetNode The target node for which to generate the connection payload. The method will use the endpoints of this node to create the payload.
+     * @return A ConnectionPayload object with a randomly generated API call based on the target node's endpoints. If the target node has no endpoints, it will generate a default API call.
+     * @throws IllegalStateException if the target node is null or has no endpoints, as a connection payload cannot be generated without this information.
+     */
     private ConnectionPayload generateRandomConnectionPayload(Node targetNode) {
         Random rand = new Random();
 
@@ -348,6 +377,13 @@ public class ProjectServiceImpl implements ProjectService {
         return payload;
     }
 
+    /**
+     * Helper method to generate a random value based on the provided ParameterType.
+     * This method returns a random value corresponding to the type of the parameter.
+     *
+     * @param type The ParameterType for which to generate a random value.
+     * @return A random value corresponding to the provided ParameterType.
+     */
     private Object generateRandomValueForType(ParameterType type) {
         Random rand = new Random();
 

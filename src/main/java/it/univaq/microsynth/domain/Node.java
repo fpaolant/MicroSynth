@@ -6,6 +6,10 @@ import lombok.*;
 import java.io.Serial;
 import java.io.Serializable;
 
+
+/**
+ * Class to represent a node, with its id, label, shape, payload and weight
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

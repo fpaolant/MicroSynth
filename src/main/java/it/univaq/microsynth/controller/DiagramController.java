@@ -30,10 +30,10 @@ public class DiagramController {
     }
 
     /**
-     * Create a new diagram for a project
+     * Update a diagram for a project
      * @param projectId project id
-     * @param diagramDTO
-     * @return
+     * @param diagramDTO diagram to update
+     * @return updated diagram
      */
     @Operation(summary = "Update project diagram", description = "return updated project id")
     @ApiResponses(value = {
@@ -50,7 +50,7 @@ public class DiagramController {
      * Delete a diagram for a project
      * @param projectId project id
      * @param diagramId diagram id
-     * @return
+     * @return status of deletion
      */
     @Operation(summary = "Delete project diagram", description = "return status of deletion")
     @ApiResponses(value = {
@@ -66,8 +66,8 @@ public class DiagramController {
 
     /**
      * Generate a diagram for a project
-     * @param params GenerationParamsDTO
-     * @return Diagram
+     * @param params parameters for diagram generation
+     * @return generated diagram
      */
     @Operation(summary = "Generate a diagram", description = "return diagram")
     @ApiResponses(value = {
@@ -77,11 +77,9 @@ public class DiagramController {
     })
     @PostMapping("/generate")
     public ResponseEntity<?> generate(@RequestBody @Valid DiagramGenerationRequestDTO params) {
-        log.info("Generating a diagram {}", params.toString());
 
         try {
             Diagram diagram = projectService.generate(params);
-            log.info("Generated diagram");
             return ResponseEntity.ok(diagram);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

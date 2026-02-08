@@ -7,6 +7,9 @@ import lombok.*;
 import java.util.List;
 
 
+/**
+ * DTO to represent a project
+ */
 @Getter
 @Setter
 @AllArgsConstructor

@@ -9,6 +9,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serial;
 
+
+/**
+ * Class to represent a diagram, with its id, name and data
+ */
 @Document(collection = "diagrams  ")
 @Data
 @AllArgsConstructor

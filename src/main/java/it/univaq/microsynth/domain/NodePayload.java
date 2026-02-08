@@ -9,6 +9,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Class to represent the payload of a node, with its language, type, base path, description and endpoints
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

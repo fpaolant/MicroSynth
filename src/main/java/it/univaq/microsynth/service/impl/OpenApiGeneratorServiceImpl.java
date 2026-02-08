@@ -40,13 +40,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
     }
 
     /**
-     * Generates a bundle (zip file) containing multiple microservices generated from OpenAPI specifications.
-     * Each microservice is generated in a separate directory with its own OpenAPI spec, Dockerfile, and supporting files.
-     * The method also generates a docker-compose.yml file to orchestrate all the services together, and a locust configuration for load testing.
-     *
-     * @param requests - a list of BundleGenerationRequestDTO, each containing the OpenAPI spec and configuration for a single microservice to generate
-     * @return File - the generated zip file containing all microservices and configuration
-     * @throws Exception if any error occurs during the generation process (e.g. file I/O errors, code generation errors, etc.)
+     * {@inheritDoc}
      */
     public File generateBundle(List<BundleGenerationRequestDTO> requests) throws Exception {
         log.info("[GENERATOR] Start bundle generation for n. {} of services ", requests.size());
@@ -209,13 +203,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
     }
 
     /**
-     * Converts a DiagramDTO (representing the microservice architecture) into a list of BundleGenerationRequestDTO,
-     * each containing the OpenAPI specification and configuration for generating a single microservice.
-     * The method iterates over the nodes in the diagram, extracts their payload to build the OpenAPI spec,
-     * and also collects information about outgoing calls to other services based on the connections in the diagram.
-     *
-     * @param diagram - the DiagramDTO representing the microservice architecture
-     * @return List<BundleGenerationRequestDTO> - a list of bundle generation requests, one for each node/service in the diagram
+     * {@inheritDoc}
      */
     @Override
     public List<BundleGenerationRequestDTO> convertGraphToRequests(DiagramDTO diagram) {

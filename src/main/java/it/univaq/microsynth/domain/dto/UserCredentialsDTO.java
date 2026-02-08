@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 
+/**
+ * DTO to represent user credentials
+ */
 @Getter
 @Setter
 @AllArgsConstructor

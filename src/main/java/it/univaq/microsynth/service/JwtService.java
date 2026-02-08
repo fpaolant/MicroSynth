@@ -35,6 +35,12 @@ public class JwtService {
         this.secretKey = Keys.hmacShaKeyFor(decodedKey);
     }
 
+    /**
+     * Generates a JWT token for the given user, including their username, user ID, and roles as claims.
+     *
+     * @param user The user for whom the token is being generated.
+     * @return A JWT token as a String.
+     */
     public String generateToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getUsername())
@@ -46,6 +52,12 @@ public class JwtService {
                 .compact();
     }
 
+    /**
+     * Validates the provided JWT token by checking its signature and expiration.
+     *
+     * @param token The JWT token to be validated.
+     * @return true if the token is valid, false otherwise.
+     */
     public boolean validateToken(String token) {
         try {
             extractAllClaims(token);
@@ -56,25 +68,58 @@ public class JwtService {
         }
     }
 
+    /**
+     * Extracts the username (subject) from the provided JWT token.
+     *
+     * @param token The JWT token from which to extract the username.
+     * @return The username contained in the token, or null if the token is invalid.
+     */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
+    /**
+     * Extracts the roles from the provided JWT token.
+     *
+     * @param token The JWT token from which to extract the roles.
+     * @return A List of roles contained in the token, or null if the token is invalid.
+     */
     public List<String> extractRoles(String token) {
         Claims claims = extractAllClaims(token);
         return claims.get("roles", List.class);
     }
 
+    /**
+     * Extracts the user ID from the provided JWT token.
+     *
+     * @param token The JWT token from which to extract the user ID.
+     * @return The user ID contained in the token, or null if the token is invalid.
+     */
     public String extractUserId(String token) {
         Claims claims = extractAllClaims(token);
         return claims.get("userId", String.class);
     }
 
+    /**
+     * Extracts a specific claim from the provided JWT token using a claims resolver function.
+     *
+     * @param token          The JWT token from which to extract the claim.
+     * @param claimsResolver A function that takes Claims as input and returns the desired claim.
+     * @param <T>            The type of the claim to be extracted.
+     * @return The extracted claim of type T, or null if the token is invalid.
+     */
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
+    /**
+     * Extracts all claims from the provided JWT token by parsing it with the secret key.
+     *
+     * @param token The JWT token from which to extract the claims.
+     * @return A Claims object containing all the claims extracted from the token.
+     * @throws JwtException If the token is invalid or cannot be parsed.
+     */
     private Claims extractAllClaims(String token) {
         return Jwts.parser().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
     }

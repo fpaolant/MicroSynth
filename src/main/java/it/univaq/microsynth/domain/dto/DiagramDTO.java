@@ -5,6 +5,9 @@ import it.univaq.microsynth.domain.DiagramData;
 import lombok.*;
 
 
+/**
+ * DTO to represent a diagram
+ */
 @Getter
 @Setter
 @AllArgsConstructor

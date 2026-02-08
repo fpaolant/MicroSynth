@@ -7,6 +7,10 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
+
+/**
+ * Class to represent the data of a diagram, with its nodes and connections
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

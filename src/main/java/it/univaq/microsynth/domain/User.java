@@ -5,6 +5,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Set;
 
+/**
+ * Class to represent a user, with its username, password, email, firstname, lastname and roles
+ */
 @Document(collection = "users")
 @Data
 @AllArgsConstructor

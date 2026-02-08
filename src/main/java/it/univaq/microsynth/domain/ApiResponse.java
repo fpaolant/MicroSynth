@@ -1,11 +1,12 @@
 package it.univaq.microsynth.domain;
 
 import lombok.*;
-import org.springframework.http.MediaType;
-
 import java.io.Serial;
 import java.io.Serializable;
 
+/**
+ * Class to represent an API response, with its status code, description, content type and content
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

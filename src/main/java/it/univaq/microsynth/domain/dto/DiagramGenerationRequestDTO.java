@@ -10,6 +10,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+
+/**
+ * DTO to represent a generate diagram request
+ */
 @Getter
 @Setter
 @AllArgsConstructor

@@ -11,16 +11,25 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
+/**
+ * Builder for the model of the delegate implementation class, which will contain the logic of the operations and the outgoing calls
+ * NOTE: Used only in Spring generator
+ */
 @Component
 public class DelegateImplModelBuilder {
 
+    /**
+     * Build the model for the delegate implementation class, by parsing the OpenAPI specification and the outgoing calls
+     */
+     @SuppressWarnings("unchecked")
     public DelegateImplModel build(BundleGenerationRequestDTO request) {
         DelegateImplModel model = new DelegateImplModel();
 
         model.setPackageName("org.openapitools.api.impl");
         model.setClassName("DefaultApiDelegateImpl");
 
-        // import per modelli generati
+        // import for model classes used in request bodies
         Set<String> modelImports = new HashSet<>();
 
         // operations
@@ -60,7 +69,7 @@ public class DelegateImplModelBuilder {
                 String methodSignature = "";
                 String logLine = "log.info(\"[IN] Handling " + om.getOperationId();
 
-                if (params.size() > 0) {
+                if (!params.isEmpty()) {
                     methodSignature = params.stream()
                             .map(p -> p.getJavaType() + " " + p.getName())
                             .collect(Collectors.joining(", "));
@@ -96,6 +105,9 @@ public class DelegateImplModelBuilder {
         return model;
     }
 
+    /**
+     * Map an OpenAPI parameter schema to a Java type
+     */
     @SuppressWarnings("unchecked")
     private String mapType(Map<String, Object> p) {
         if (p == null) {
@@ -158,6 +170,9 @@ public class DelegateImplModelBuilder {
         }
     }
 
+    /**
+     * Map the list of outgoing calls to a list of OutgoingCallModel, which will be used to generate the code for the outgoing calls
+     */
     private List<OutgoingCallModel> mapOutgoingCalls(
             List<OutgoingCallDTO> outgoingCalls,
             String type
@@ -208,6 +223,9 @@ public class DelegateImplModelBuilder {
         }
     }
 
+    /**
+     * Map the request body schema of an operation to a DelegateBodyModel, which will be used to generate the code for the request body
+     */
     @SuppressWarnings("unchecked")
     private DelegateBodyModel mapRequestBody(Map<String, Object> operation) {
         DelegateBodyModel defaultModel = new DelegateBodyModel();

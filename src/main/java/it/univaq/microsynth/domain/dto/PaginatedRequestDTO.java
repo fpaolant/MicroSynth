@@ -3,6 +3,10 @@ package it.univaq.microsynth.domain.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+
+/**
+ * DTO to represent a paginated request
+ */
 @Getter
 @Setter
 @AllArgsConstructor

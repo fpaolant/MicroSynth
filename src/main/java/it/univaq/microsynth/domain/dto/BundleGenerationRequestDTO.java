@@ -6,6 +6,10 @@ import lombok.*;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * DTO to represent a generate bundle request
+ */
 @Getter
 @Setter
 @AllArgsConstructor

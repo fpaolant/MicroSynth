@@ -8,6 +8,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Class to represent an endpoint, with its path, method, parameters and responses
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

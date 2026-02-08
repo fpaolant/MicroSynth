@@ -6,13 +6,26 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
+/**
+ * Mapper for Project and ProjectDTO
+ */
 @Mapper(componentModel = "spring")
 public interface ProjectMapper {
     ProjectMapper INSTANCE = Mappers.getMapper( ProjectMapper.class );
 
+    /**
+     * Maps a Project to a ProjectDTO
+     * @param project the Project to map
+     * @return the mapped ProjectDTO
+     */
     @Mapping(target = "userName", source = "owner")
     ProjectDTO projectToProjectDTO(Project project);
 
+    /**
+     * Maps a ProjectDTO to a Project
+     * @param projectDTO the ProjectDTO to map
+     * @return the mapped Project
+     */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "owner", source = "userName")
     Project projectDTOtoProject(ProjectDTO projectDTO);

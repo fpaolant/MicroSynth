@@ -20,14 +20,17 @@ import java.util.Set;
 @Slf4j
 @Service
 public class AccountServiceImpl implements AccountService {
-    private UserRepository userRepository;
-    private UserMapper userMapper;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     public AccountServiceImpl(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<Page<UserResponseDTO>> getAllUsers(PaginatedRequestDTO paginatedRequestDTO) {
         Sort sort = paginatedRequestDTO.getSortDir().equalsIgnoreCase("asc") ? Sort.by(paginatedRequestDTO.getSortBy()).ascending() : Sort.by(paginatedRequestDTO.getSortBy()).descending();
@@ -37,11 +40,17 @@ public class AccountServiceImpl implements AccountService {
         return ResponseEntity.ok(users);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<Role> getUserRoles(String id) {
         return userRepository.getRolesById(id);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<UserResponseDTO> getUserById(String id) {
         return userRepository.findById(id)
@@ -50,6 +59,9 @@ public class AccountServiceImpl implements AccountService {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<UserResponseDTO> createUser(UserResponseDTO user) {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
@@ -62,6 +74,9 @@ public class AccountServiceImpl implements AccountService {
         return ResponseEntity.ok(user);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<UserResponseDTO> updateUser(String id, UserResponseDTO user) {
         return userRepository.findById(id)
@@ -77,6 +92,9 @@ public class AccountServiceImpl implements AccountService {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<String> deleteUser(String id) {
         return userRepository.findById(id)
@@ -87,6 +105,9 @@ public class AccountServiceImpl implements AccountService {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<String> promoteUser(String id) {
     return userRepository.findById(id)
@@ -101,8 +122,11 @@ public class AccountServiceImpl implements AccountService {
                 return ResponseEntity.ok("User promoted successfully");
             })
             .orElse(ResponseEntity.notFound().build());
-}
+    }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ResponseEntity<String> demoteUser(String id) {
         return userRepository.findById(id)
@@ -115,6 +139,5 @@ public class AccountServiceImpl implements AccountService {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
-
 
 }

@@ -7,6 +7,10 @@ import lombok.*;
 import java.io.Serial;
 import java.io.Serializable;
 
+
+/**
+ * Class to represent a parameter, with its name, type and whether it is required or not
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

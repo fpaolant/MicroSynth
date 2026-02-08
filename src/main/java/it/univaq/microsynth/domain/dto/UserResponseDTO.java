@@ -10,6 +10,9 @@ import lombok.ToString;
 import java.util.Set;
 
 
+/**
+ * DTO to represent a user response
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString

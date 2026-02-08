@@ -9,6 +9,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
+/**
+ * Class to represent a project, with its name, owner and diagrams
+ */
 @Document(collection = "projects")
 @Data
 @AllArgsConstructor
