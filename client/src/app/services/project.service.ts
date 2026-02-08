@@ -1,9 +1,10 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Pageable, PaginatedRequest, Sort } from './model/request.paginated';
 import { BaseDocument } from './model/response.document';
 import { Diagram } from './diagram.service';
+import { LayoutService } from '../layout/service/layout.service';
 
 
 
@@ -45,11 +46,10 @@ export interface ProjectsPaginatedResponse {
 })
 export class ProjectService {
   private readonly baseUrl = '/api/project';
-
   private readonly recentProjectsKey = 'recent_projects';
 
-  constructor(private http: HttpClient) {}
-
+  private layoutService = inject(LayoutService);
+  private http = inject(HttpClient);
   
   
   
@@ -139,7 +139,7 @@ export class ProjectService {
       recentProjects = recentProjects.slice(0, 5);
     }
     
-    localStorage.setItem(this.recentProjectsKey, JSON.stringify(recentProjects));
+    localStorage.setItem(this.recentProjectsKey, JSON.stringify(recentProjects));// Notify menu projects update
   }
 
   private removeFromRecentProjects(projectId: string): void {
@@ -148,6 +148,7 @@ export class ProjectService {
   
     recentProjects = recentProjects.filter(p => p.id !== projectId);
     localStorage.setItem(this.recentProjectsKey, JSON.stringify(recentProjects));
+    this.layoutService.notifyMenuProjectsUpdate(); // Notify menu projects update
   }
  
 }

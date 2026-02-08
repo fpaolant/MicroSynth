@@ -15,12 +15,24 @@
 </p-breadcrumb>
 
 <div>
-  <div
-    class="font-semibold text-xl m-4"
-    (click)="changeName = true"
-    *ngIf="!changeName"
-  >
-    {{ diagram?.name }}
+  <div class="flex items-center gap-2">
+    <div
+      class="font-semibold text-xl ml-2 mb-4 mt-6"
+      (click)="changeName = true"
+      *ngIf="!changeName"
+    >
+      {{ diagram?.name }}
+    </div>
+    <p-button
+      icon="pi pi-pencil"
+      severity="primary"
+      size="small"
+      [text]="true"
+      [rounded]="true"
+      (click)="changeName = true"
+      pTooltip="Rename"
+      *ngIf="!changeName"
+    />
   </div>
   <div class="my-4">
     <!-- <p-button [label]="diagram?.name" text (click)="changeName=true" *ngIf="!changeName"/> -->

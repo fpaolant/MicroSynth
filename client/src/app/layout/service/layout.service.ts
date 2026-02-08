@@ -26,6 +26,7 @@ interface MenuChangeEvent {
     providedIn: 'root'
 })
 export class LayoutService {
+    
     _config: layoutConfig = {
         preset: 'Aura',
         primary: 'emerald',
@@ -52,9 +53,13 @@ export class LayoutService {
 
     private menuSource = new Subject<MenuChangeEvent>();
 
+    private menuProjectSubject = new Subject<any>();
+
     private resetSource = new Subject();
 
     menuSource$ = this.menuSource.asObservable();
+    
+    menuProjects$ = this.menuProjectSubject.asObservable();
 
     resetSource$ = this.resetSource.asObservable();
 
@@ -170,6 +175,10 @@ export class LayoutService {
 
     onMenuStateChange(event: MenuChangeEvent) {
         this.menuSource.next(event);
+    }
+
+    notifyMenuProjectsUpdate() {
+        this.menuProjectSubject.next(null);
     }
 
     reset() {

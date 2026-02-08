@@ -1,10 +1,12 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { AppMenuitem } from './app.menuitem';
 import { AuthService } from '../../services/auth.service';
 import { ProjectService } from '../../services/project.service';
+import { LayoutService } from '../service/layout.service';
 
 @Component({
     selector: 'app-menu',
@@ -43,15 +45,17 @@ import { ProjectService } from '../../services/project.service';
 
     `
 })
-export class AppMenu {
+export class AppMenu implements OnInit {
     model: MenuItem[] = [];
     modelAdmin: MenuItem[] = [];
     modelUser: MenuItem[] = [];
-
     recentProjects: MenuItem[] = [];
 
     authService = inject(AuthService);
     projectService = inject(ProjectService);
+    layoutService = inject(LayoutService);
+    
+    private destroyRef: DestroyRef = inject(DestroyRef);
     
 
     ngOnInit() {
@@ -74,6 +78,11 @@ export class AppMenu {
         }
 
         if(this.authService.isLogged()){
+            this.layoutService.menuProjects$
+            .pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+                console.log("update received")
+                this.loadRecentProjects();
+            });
             this.modelUser = [
                 {
                     label: '',
@@ -82,22 +91,27 @@ export class AppMenu {
                     ]
                 },
             ];
-
-            // Carica progetti recenti da localStorage
-            const recent = this.projectService.getRecentProjects();
-            if(recent.length > 0) {
-                this.recentProjects = [
-                    {
-                    label: 'Recent projects',
-                    items: recent.map((project) => ({
-                        label: project.name,
-                        icon: 'pi pi-fw pi-clock',
-                        routerLink: [`/pages/project/${project.id}`]
-                    }))
-                    }
-                ];
-            }
+            this.loadRecentProjects();
         }
 
     }
+
+    private loadRecentProjects() {
+        // Carica progetti recenti da localStorage
+        const recent = this.projectService.getRecentProjects();
+        if(recent.length > 0) {
+            this.recentProjects = [
+                {
+                label: 'Recent projects',
+                items: recent.map((project) => ({
+                    label: project.name,
+                    icon: 'pi pi-fw pi-clock',
+                    routerLink: [`/pages/project/${project.id}`]
+                }))
+                }
+            ];
+        }    
+    }
+
+
 }

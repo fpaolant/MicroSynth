@@ -10,13 +10,13 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { AppLogo } from '../../layout/component/app.logo';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { AppFolder } from "../../layout/component/app.folder";
 
 @Component({
   selector: 'app-projects',
-  imports: [RouterModule, CommonModule, ReactiveFormsModule, DataViewModule, DialogModule, ConfirmDialogModule, ButtonModule, InputTextModule, TooltipModule, SkeletonModule, AppLogo],
+  imports: [RouterModule, CommonModule, ReactiveFormsModule, DataViewModule, DialogModule, ConfirmDialogModule, ButtonModule, InputTextModule, TooltipModule, SkeletonModule, AppFolder],
   providers: [MessageService, ConfirmationService],
   templateUrl: './projects.component.html',
   styleUrl: './projects.component.scss'
@@ -75,7 +75,6 @@ export class ProjectsPage implements OnInit {
   }
 
   deleteProject(project: Project) {
-
     this.confirmationService.confirm({
       message: 'Are you sure you want to delete ' + project.name + '?',
       header: 'Confirm deleting project',
