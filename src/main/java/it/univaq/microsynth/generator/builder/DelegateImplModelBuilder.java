@@ -55,7 +55,6 @@ public class DelegateImplModelBuilder {
                 List<Map<String,Object>> openapiParams =
                         (List<Map<String,Object>>) op.get("parameters");
 
-
                 if (openapiParams != null) {
                     for (Map<String,Object> p : openapiParams) {
                         DelegateParamModel pm = new DelegateParamModel();
@@ -75,19 +74,26 @@ public class DelegateImplModelBuilder {
                             .collect(Collectors.joining(", "));
 
                     String logParams = params.stream()
-                            .map(DelegateParamModel::getName)
-                            .collect(Collectors.joining(", "));
-                    logLine += " with params: \"" + logParams + "\" ";
+                            .map(p ->  p.getName() + ": \" + " + p.getName())
+                            .collect(Collectors.joining(" + \", + "));
+
+                    logLine += " with params: " + logParams + " + \" ";
                 }
 
                 // operation request body
                 DelegateBodyModel body = mapRequestBody(op);
-                om.setBody(body);
-                methodSignature += (methodSignature.isEmpty() ? "" : ", ")
-                        + body.getJavaType() + " body";
-                modelImports.add(body.getJavaType());
+                if(body != null) {
+                    om.setBody(body);
+                    methodSignature += (methodSignature.isEmpty() ? "" : ", ")
+                            + body.getJavaType() + " body";
 
-                logLine += " with body: " + body.toString() + "\");";
+                    modelImports.add(body.getJavaType());
+                    logLine += " with body: \" + body.toString()";
+                } else {
+                    logLine += " with no body\"";
+                }
+
+                logLine += ");";
                 om.setLogLine(logLine);
 
                 om.setMethodSignature(methodSignature);
@@ -228,9 +234,7 @@ public class DelegateImplModelBuilder {
      */
     @SuppressWarnings("unchecked")
     private DelegateBodyModel mapRequestBody(Map<String, Object> operation) {
-        DelegateBodyModel defaultModel = new DelegateBodyModel();
-        defaultModel.setJavaType("");
-        defaultModel.setFields(Map.of());
+        DelegateBodyModel defaultModel = null;
 
         if (operation == null) {
             return defaultModel;

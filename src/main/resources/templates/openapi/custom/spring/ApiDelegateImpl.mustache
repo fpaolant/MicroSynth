@@ -17,15 +17,14 @@ import org.openapitools.api.outgoing.OutgoingCallService;
 import org.openapitools.model.{{.}};
 {{/modelImports}}
 
+
+
 @Service
 public class {{className}} implements DefaultApiDelegate {
+    private static final Logger log = LoggerFactory.getLogger({{className}}.class);
 
-private static final Logger log =
-LoggerFactory.getLogger({{className}}.class);
-
-
-@Autowired
-private OutgoingCallService outgoingCallService;
+    @Autowired
+    private OutgoingCallService outgoingCallService;
 
 {{#delegateOperations}}
     @Override
