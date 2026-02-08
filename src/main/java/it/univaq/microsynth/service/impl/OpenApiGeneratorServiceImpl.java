@@ -28,12 +28,11 @@ import java.util.stream.Collectors;
 
 
 @Slf4j
-
 @Service
 public class OpenApiGeneratorServiceImpl implements GeneratorService {
+    // Starting port for generated services, each service will get a different port incrementing this value
     private final static int START_PORT = 8081;
-
-
+    // Builder for creating the model used to generate the delegate implementation in Spring services
     private final DelegateImplModelBuilder delegateImplModelBuilder;
 
     public OpenApiGeneratorServiceImpl(DelegateImplModelBuilder delegateImplModelBuilder) {
@@ -209,12 +208,21 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
         log.info("[GENERATOR] End code generation with openapi tools for service {}", request.getProjectName());
     }
 
+    /**
+     * Converts a DiagramDTO (representing the microservice architecture) into a list of BundleGenerationRequestDTO,
+     * each containing the OpenAPI specification and configuration for generating a single microservice.
+     * The method iterates over the nodes in the diagram, extracts their payload to build the OpenAPI spec,
+     * and also collects information about outgoing calls to other services based on the connections in the diagram.
+     *
+     * @param diagram - the DiagramDTO representing the microservice architecture
+     * @return List<BundleGenerationRequestDTO> - a list of bundle generation requests, one for each node/service in the diagram
+     */
     @Override
     public List<BundleGenerationRequestDTO> convertGraphToRequests(DiagramDTO diagram) {
         log.info("[GENERATOR] Start Converting diagram to bundle generation requests for diagram {}", diagram.getName());
         List<BundleGenerationRequestDTO> requests = new ArrayList<>();
 
-        // Mappa dei nodi per id
+        // Create a map of nodeId -> Node for easy lookup when building outgoing calls
         Map<String, Node> nodeMap = diagram.getData().getNodes().stream()
                 .collect(Collectors.toMap(Node::getId, n -> n));
 
@@ -239,7 +247,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                 String path = ep.getPath() == null || ep.getPath().isEmpty() ? "/" : ep.getPath();
                 String method = ep.getMethod() == null || ep.getMethod().isEmpty() ? "get" : ep.getMethod().toLowerCase();
 
-                // Costruzione parametri OpenAPI validi
+                // Building parameters OpenAPI valid
                 List<Map<String, Object>> parameters = ep.getParameters().stream().map(p -> Map.of(
                         "name", p.getName(),
                         "in", "query",
@@ -247,7 +255,6 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                         "schema", Map.of("type", p.getType().name().toLowerCase())
                 )).toList();
 
-                // Costruzione responses OpenAPI validi
                 Map<String, Object> responses = ep.getResponses().stream()
                         .collect(Collectors.toMap(
                                 r -> String.valueOf(r.getStatus()),
