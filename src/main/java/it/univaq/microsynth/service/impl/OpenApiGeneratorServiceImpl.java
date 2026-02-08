@@ -117,14 +117,6 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                 Map.of("services", initiatorsRequests)
         );
 
-        Path prometheusDir = tempRootDir.resolve("prometheus");
-        Files.createDirectories(prometheusDir);
-        TemplateUtils.writeRenderedTemplate(
-                "prometheus/prometheus.yml",
-                prometheusDir.resolve("prometheus.yml"),
-                Map.of()
-        );
-
         // Docker compose for all services
         Path composeFile = tempRootDir.resolve("docker-compose.yml");
         TemplateUtils.writeRenderedTemplate(
