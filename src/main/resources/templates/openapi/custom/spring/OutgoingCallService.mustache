@@ -1,0 +1,170 @@
+package {{invokerPackage}}.outgoing;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.client.HttpClientErrorException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
+
+@Service
+public class OutgoingCallService {
+
+private static final Logger log =
+LoggerFactory.getLogger(OutgoingCallService.class);
+
+private final RestTemplate restTemplate = new RestTemplate();
+private static final Random RANDOM = new Random();
+private static final ObjectMapper MAPPER = new ObjectMapper();
+
+// -------------------------
+// JSON injected by template
+// -------------------------
+private static final String OUTGOING_CALLS_JSON = "{{{outgoingCallsJson}}}";
+
+private static final Map<String, OutgoingCall> CALLS = new HashMap<>();
+
+static {
+    loadFromJson();
+}
+
+// -------------------------
+// JSON -> Java mapping
+// -------------------------
+private static void loadFromJson() {
+    if (OUTGOING_CALLS_JSON == null || OUTGOING_CALLS_JSON.trim().isEmpty()) {
+        return;
+    }
+
+    try {
+        List<Map<String, Object>> calls =
+        MAPPER.readValue(
+            OUTGOING_CALLS_JSON,
+            new TypeReference<List<Map<String, Object>>>() {}
+        );
+
+        for (Map<String, Object> c : calls) {
+            String operationId = (String) c.get("operationId");
+            String httpMethod = (String) c.get("httpMethod");
+            String baseUrl = (String) c.get("baseUrl");
+            String path = (String) c.get("path");
+            Number weight = (Number) c.get("weight");
+
+            if (operationId == null || httpMethod == null || baseUrl == null) {
+                continue;
+            }
+            String url = baseUrl + (path != null ? path : "");
+
+            CALLS.put(
+                operationId,
+                new OutgoingCall(
+                    HttpMethod.valueOf(httpMethod),
+                    url,
+                    weight != null ? weight.doubleValue() : 1.0
+                )
+            );
+        }
+        //log.info("Loaded {} outgoing calls", CALLS.size());
+
+    } catch (Exception e) {
+        log.error("Failed to parse outgoing calls JSON", e);
+    }
+}
+
+// -------------------------
+// Public API
+// -------------------------
+public boolean call(String operationId, Map<String, Object> params) {
+    OutgoingCall call = CALLS.get(operationId);
+    if (call == null) {
+        log.warn("Outgoing call '{}' not configured", operationId);
+        return true;
+    }
+
+    double p = RANDOM.nextDouble();
+    if (p > call.weight) {
+        log.info(
+            "Outgoing call '{}' skipped (p={} > weight={})",
+            operationId, p, call.weight
+        );
+        return true;
+    }
+
+    try {
+        log.info(
+            "[OUT] Executing outgoing call '{}' -> {} {} with params={}",
+            operationId, call.method, call.url, params
+        );
+
+        ResponseEntity<Object> response;
+
+        if (call.method == HttpMethod.GET) {
+            UriComponentsBuilder builder =
+            UriComponentsBuilder.fromHttpUrl(call.url);
+
+            if (params != null) {
+                params.forEach((k, v) -> {
+                    if (v != null) builder.queryParam(k, v);
+                });
+            }
+
+        response = restTemplate.getForEntity(
+            builder.toUriString(), Object.class
+        );
+        } else {
+            HttpEntity<Map<String, Object>> entity =
+            new HttpEntity<>(params);
+            response = restTemplate.exchange(call.url, call.method, entity, Object.class);
+        }
+
+        HttpStatus status = response.getStatusCode();
+
+        if (status.is2xxSuccessful()) {
+            log.info("Outgoing call '{}' completed successfully ({})", operationId, status.value());
+            return true;
+        }
+        return false;
+
+    } catch (HttpClientErrorException e) {
+        log.warn(
+            "Outgoing call '{}' returned {}: {}",
+            operationId,
+            e.getStatusCode(),
+            e.getResponseBodyAsString()
+        );
+        return false;
+    } catch (Exception ex) {
+        log.error("Outgoing call '{}' FAILED: {}", operationId, ex.getMessage(), ex);
+        return false;
+    }
+}
+
+    // -------------------------
+    // Internal DTO
+    // -------------------------
+    private static class OutgoingCall {
+        private final HttpMethod method;
+        private final String url;
+        private final double weight;
+
+        private OutgoingCall(HttpMethod method, String url, double weight) {
+            this.method = method;
+            this.url = url;
+            this.weight = weight;
+        }
+    }
+
+}

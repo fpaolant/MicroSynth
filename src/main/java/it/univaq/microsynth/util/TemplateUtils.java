@@ -17,8 +17,14 @@ public class TemplateUtils {
         String content = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
 
         Handlebars handlebars = new Handlebars();
-        Template template = handlebars.compileInline(content);
 
+        ObjectMapper mapper = new ObjectMapper();
+
+        handlebars.registerHelper("json", (context, options) ->
+                mapper.writeValueAsString(context)
+        );
+
+        Template template = handlebars.compileInline(content);
         return template.apply(values);
     }
 
@@ -26,12 +32,6 @@ public class TemplateUtils {
         String rendered = renderTemplate(templateName, values);
         Files.writeString(outputPath, rendered, StandardCharsets.UTF_8);
         Files.writeString(outputPath, rendered, StandardCharsets.UTF_8);
-    }
-
-    public static void writeRenderedTemplateAsJson(String templateName, Path outputPath, String variableName, Object value) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value);
-        writeRenderedTemplate(templateName, outputPath, Map.of(variableName, json));
     }
 
 }

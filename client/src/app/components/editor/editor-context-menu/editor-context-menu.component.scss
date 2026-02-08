@@ -1,0 +1,29 @@
+/* Riduce dimensione complessiva dei toggle button */
+:host ::ng-deep .selectbutton-small .p-togglebutton {
+    padding: 0.25rem 0.1rem; /* meno spazio interno */
+    font-size: 0.7rem;       /* testo più piccolo */
+    min-width: 2rem;        /* larghezza minima dei pulsanti */
+  }
+  
+  /* Se vuoi che il container totale non sia troppo largo */
+  :host ::ng-deep .selectbutton-small {
+    width: auto;
+  }
+
+  .param-field {
+    input, p-select {
+        max-height: 30px;
+    }
+  }
+
+  .resp-field input::placeholder,
+  .resp-field textarea::placeholder,
+  .param-field input::placeholder,
+  .param-field textarea::placeholder {
+    font-size: 0.7rem;
+  }
+
+
+  ::ng-deep .p-fieldset-legend {
+    font-size: 0.9rem; /* o 14px, come preferisci */
+  }

@@ -17,5 +17,6 @@ public class BundleGenerationRequestDTO {
     private Map<String, Object> apiSpec; // OpenAPI specification as a Map
     private String projectName;
     private List<OutgoingCallDTO> outgoingCalls;
+    private Boolean initiator; // true if this request is the initiator of the generation process, false otherwise
 
 }

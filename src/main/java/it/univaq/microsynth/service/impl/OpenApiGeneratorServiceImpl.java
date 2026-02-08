@@ -1,16 +1,20 @@
 package it.univaq.microsynth.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import it.univaq.microsynth.domain.*;
 import it.univaq.microsynth.domain.dto.BundleGenerationRequestDTO;
 import it.univaq.microsynth.domain.dto.DiagramDTO;
 import it.univaq.microsynth.domain.dto.OutgoingCallDTO;
 import it.univaq.microsynth.domain.dto.OutgoingParamDTO;
+import it.univaq.microsynth.generator.builder.DelegateImplModelBuilder;
+import it.univaq.microsynth.generator.model.DelegateImplModel;
+import it.univaq.microsynth.generator.util.GeneratorUtil;
 import it.univaq.microsynth.service.GeneratorService;
 import it.univaq.microsynth.util.TemplateUtils;
 import it.univaq.microsynth.util.ZipUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.openapitools.codegen.ClientOptInput;
 import org.openapitools.codegen.DefaultGenerator;
-import org.openapitools.codegen.SupportingFile;
 import org.openapitools.codegen.config.CodegenConfigurator;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +26,28 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
+
 @Slf4j
+
 @Service
 public class OpenApiGeneratorServiceImpl implements GeneratorService {
 
+
+    private final DelegateImplModelBuilder delegateImplModelBuilder;
+
+    public OpenApiGeneratorServiceImpl(DelegateImplModelBuilder delegateImplModelBuilder) {
+        this.delegateImplModelBuilder = delegateImplModelBuilder;
+    }
+
+    /**
+     * Generates a bundle (zip file) containing multiple microservices generated from OpenAPI specifications.
+     * Each microservice is generated in a separate directory with its own OpenAPI spec, Dockerfile, and supporting files.
+     * The method also generates a docker-compose.yml file to orchestrate all the services together, and a locust configuration for load testing.
+     *
+     * @param requests
+     * @return File - the generated zip file containing all microservices and configuration
+     * @throws Exception
+     */
     public File generateBundle(List<BundleGenerationRequestDTO> requests) throws Exception {
         Path tempRootDir = Files.createTempDirectory("multi_generator_");
         List<Map<String, String>> services = new ArrayList<>();
@@ -33,7 +55,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
 
         for (BundleGenerationRequestDTO request : requests) {
             // Create project directory
-            Path projectDir = tempRootDir.resolve(sanitizeDockerServiceName(request.getProjectName()));
+            Path projectDir = tempRootDir.resolve(GeneratorUtil.sanitizeDockerServiceName(request.getProjectName()));
             Files.createDirectories(projectDir);
 
             // OpenAPI file creation
@@ -42,11 +64,9 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                     .writerWithDefaultPrettyPrinter()
                     .writeValueAsString(request.getApiSpec());
             Files.writeString(openapiFile, json);
-            log.info("OpenAPI spec for " + request.getProjectName() + " written to " + openapiFile.toAbsolutePath());
-            log.info("json: " + json);
 
             // generate single service from openapi
-            generateSingleService(request.getType(), openapiFile, projectDir, request.getOutgoingCalls());
+            generateSingleService(request, openapiFile, projectDir);
 
             // Port
             int externalPort = 8081 + portOffset++;
@@ -54,7 +74,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
 
             // write dockerFile in the project directory
             TemplateUtils.writeRenderedTemplate(
-                    getDockerTemplate(request.getType()),
+                    GeneratorUtil.getDockerTemplate(request.getType()),
                     projectDir.resolve("Dockerfile"),
                     Map.of(
                             "projectName", request.getProjectName(),
@@ -63,7 +83,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
             );
 
             // Add to services list for docker-compose
-            String serviceName = sanitizeDockerServiceName(request.getProjectName());
+            String serviceName = GeneratorUtil.sanitizeDockerServiceName(request.getProjectName());
 
             services.add(Map.of(
                     "name", serviceName,
@@ -87,10 +107,23 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
         );
 
         // Generate locustfile.py
-        TemplateUtils.writeRenderedTemplateAsJson(
+        // only with initiator services, and pass the outgoing calls to log in locust
+        List<BundleGenerationRequestDTO> initiatorsRequests = requests.stream()
+                .filter(BundleGenerationRequestDTO::getInitiator)
+                .collect(Collectors.toList());
+        TemplateUtils.writeRenderedTemplate(
                 "locust/locust.py.template",
                 locustDir.resolve("locust.py"),
-                "servicesJson", requests);
+                Map.of("services", initiatorsRequests)
+        );
+
+        Path prometheusDir = tempRootDir.resolve("prometheus");
+        Files.createDirectories(prometheusDir);
+        TemplateUtils.writeRenderedTemplate(
+                "prometheus/prometheus.yml",
+                prometheusDir.resolve("prometheus.yml"),
+                Map.of()
+        );
 
         // Docker compose for all services
         Path composeFile = tempRootDir.resolve("docker-compose.yml");
@@ -107,182 +140,62 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
         return zipFile;
     }
 
-    private static String getDockerTemplate(String type) {
-        return switch (type.toLowerCase()) {
-            case "python", "python-flask" -> "docker/Dockerfile-python.template";
-            case "java", "spring" -> "docker/Dockerfile-spring.template";
-            case "javascript", "node-express" -> "docker/Dockerfile-node.template";
-            default -> throw new IllegalArgumentException("Unsupported type: " + type);
-        };
-    }
-
-    private void generateSingleService(String type, Path openapiFile, Path projectDir, List<OutgoingCallDTO> outgoingCalls) throws IOException {
+    /**
+     * Generates a single microservice from an OpenAPI specification using OpenAPI Generator.
+     * the generator is chosen based on the request type (e.g. "spring" for Java, "python-flask" for Python, etc.)
+     * @param request
+     * @param openapiFile
+     * @param projectDir
+     * @throws IOException
+     */
+    private void generateSingleService(BundleGenerationRequestDTO request, Path openapiFile, Path projectDir) throws IOException {
         // Choose generator
-        String generatorName = mapGenerator(type);
-
-        log.info("generatorName: " + generatorName);
+        String generatorName = GeneratorUtil.mapGenerator(request.getType());
 
         // Generated output dir
         Path outputDir = projectDir.resolve("generated");
         Files.createDirectories(outputDir);
 
-        List<SupportingFile> supportingFiles = resolveSupportingFiles(generatorName);
-
         // Generate code with OpenAPI Generator
         CodegenConfigurator configurator =
                 new CodegenConfigurator()
-                        .setInputSpec(openapiFile.toAbsolutePath().toString())
-                        .setGeneratorName(generatorName)
-                        .setTemplateDir("src/main/resources/templates/openapi/custom/" + generatorName)
+                        .setInputSpec(openapiFile.toAbsolutePath().toString()) // specifica OpenAPI
+                        .setGeneratorName(generatorName) // es. "spring", "python-flask", "nodejs-express"
+                        .setTemplateDir("src/main/resources/templates/openapi/custom/" + generatorName) // directory dei template personalizzati
                         .setOutputDir
                                 (outputDir.toAbsolutePath().toString())
-                        .addAdditionalProperty("interfaceOnly", "false")
-                        .addAdditionalProperty("delegatePattern", "false")
-                        .addAdditionalProperty("generateSupportingFiles", "true")
-                        .addAdditionalProperty("useTags", "true")
-                        .addAdditionalProperty("outgoingCalls", outgoingCalls)
-                        .addAdditionalProperty("supportingFiles", supportingFiles);
-
-        new DefaultGenerator()
-                .opts(configurator.toClientOptInput())
-                .generate();
-    }
-
-    private List<SupportingFile> resolveSupportingFiles(String generatorName) {
-
-        return switch (generatorName) {
-
-            case "nodejs-express" -> List.of(
-                    new SupportingFile(
-                            "outgoingClient.mustache",
-                            "",
-                            "outgoingClient.js"
-                    )
-            );
-
-            case "spring" -> List.of(
-                    new SupportingFile(
-                            "DefaultApiImpl.mustache",
-                            "src/main/java/{{packagePath}}/impl",
-                            "DefaultApiImpl.java"
-                    ),
-                    new SupportingFile(
-                            "OutgoingCallService.mustache",
-                            "src/main/java/{{packagePath}}/outgoing",
-                            "OutgoingCallService.java"
-                    )
-            );
-
-            case "python-flask" -> List.of(
-                    new SupportingFile(
-                            "outgoing_client.mustache",
-                            "",
-                            "outgoing_client.py"
-                    )
-            );
-
-            default -> List.of();
-        };
-    }
-
-    public List<BundleGenerationRequestDTO> convertGraphToRequestsinit(DiagramDTO diagram) {
-        List<BundleGenerationRequestDTO> requests = new ArrayList<>();
-
-        // Map nodes by id to trace back from connection.source to microservice
-        Map<String, Node> nodeMap = diagram.getData().getNodes().stream()
-                .collect(Collectors.toMap(Node::getId, n -> n));
-
-        for (Node node : diagram.getData().getNodes()) {
-            // Build the OpenAPI skeleton of the microservice
-            Map<String, Object> openapi = new LinkedHashMap<>();
-            openapi.put("openapi", "3.0.0");
-            openapi.put("info", Map.of(
-                    "title", sanitize(node.getLabel()),
-                    "version", "1.0.0",
-                    "description", node.getPayload().getDescription()
-            ));
-
-            // Find all incoming connections to this node
-            List<Connection> incoming = diagram.getData().getConnections().stream()
-                    .filter(c -> c.getTarget().equals(node.getId()))
-                    .toList();
-
-            Map<String, Map<String, Object>> paths = new LinkedHashMap<>();
-            openapi.put("paths", paths);
+                        .addAdditionalProperty("interfaceOnly", false) // genera solo le interfacce, non le implementazioni
+                        .addAdditionalProperty("generateSupportingFiles", true) // genera i supporting files (es. pom.xml, requirements.txt, ecc.)
+                        .addAdditionalProperty("useTags", "true"); // organizza le operazioni in classi separate per tag (es. path1Post → Path1Api, path2Get → Path2Api, ecc.)
 
 
+        //configurator.addAdditionalProperty("outgoingCalls", request.getOutgoingCalls()); // per i template, contiene la lista delle chiamate in uscita da loggare
+        ObjectMapper mapper = new ObjectMapper();
 
-            for (Connection conn : incoming) {
-                ConnectionPayload p = conn.getPayload();
-                if (p == null) continue;
+        String outgoingCallsJson = mapper.writeValueAsString(request.getOutgoingCalls());
 
-                String path = (p.getApiCall().getPath() == null || p.getApiCall().getPath().isEmpty()) ? "/getObject" : p.getApiCall().getPath();
-                String method = (p.getApiCall().getMethod() == null ? "get" : p.getApiCall().getMethod().toLowerCase());
+        // Spring specific configuration (delegate pattern)
+        if(generatorName.equals("spring")) {
+            configurator.addAdditionalProperty("outgoingCallsJson", GeneratorUtil.stringEscape(outgoingCallsJson));
+            configurator.addAdditionalProperty("useSpringController", true)
+                    .addAdditionalProperty("delegatePattern", true)
+                    .addAdditionalProperty("useResponseEntity", true);
 
-                // Check if path already exists with the same method
-                Map<String, Object> existingMethods = paths.get(path);
-                if (existingMethods != null && existingMethods.containsKey(method)) {
-                    continue;
-                }
+            DelegateImplModel delegateModel = delegateImplModelBuilder.build(request);
 
-                paths.computeIfAbsent(path, k -> new LinkedHashMap<>())
-                        .put(method, Map.of(
-                                "summary", "",
-                                "operationId", sanitize(conn.getLabel()),
-                                "responses", Map.of("200", Map.of("description", "OK"))
-                        ));
-            }
-
-            // Outgoing → for Locust
-            List<Connection> outgoing = diagram.getData().getConnections().stream()
-                    .filter(c -> c.getSource().equals(node.getId()))
-                    .toList();
-
-            List<OutgoingCallDTO> outgoingCalls = outgoing.stream().map(conn -> {
-                ConnectionPayload p = conn.getPayload();
-                OutgoingCallDTO oc = new OutgoingCallDTO();
-                oc.setTargetService(sanitize(nodeMap.get(conn.getTarget()).getLabel()));
-                oc.setHttpMethod(p != null && p.getApiCall().getMethod() != null ? p.getApiCall().getMethod().toUpperCase() : "GET");
-                oc.setPath(p != null && p.getApiCall().getPath() != null ? p.getApiCall().getPath() : "/");
-                oc.setWeight(p != null && conn.getWeight() > 0 ? conn.getWeight() : 0.5);
-                return oc;
-            }).toList();
-
-            // Create final DTO
-            BundleGenerationRequestDTO dto = new BundleGenerationRequestDTO();
-            dto.setType(node.getPayload().getLanguage());
-            dto.setProjectName(sanitize(node.getLabel()));
-            dto.setApiSpec(openapi);
-            dto.setOutgoingCalls(outgoingCalls);
-
-            requests.add(dto);
+            configurator
+                    .addAdditionalProperty("modelImports", delegateModel.getModelImports())
+                    .addAdditionalProperty("delegateOperations", delegateModel.getOperations())
+                    .addAdditionalProperty("packageName", delegateModel.getPackageName())
+                    .addAdditionalProperty("className", delegateModel.getClassName());
+        } else {
+            configurator.addAdditionalProperty("outgoingCallsJson", outgoingCallsJson);
+            configurator.addAdditionalProperty("delegatePattern", false); // per gli altri generatori (es. python-flask) generiamo tutto in un unico file, senza pattern delegate
         }
 
-        return requests;
-    }
-
-    private String mapGenerator(String type) throws IllegalArgumentException{
-        log.info("lang: " + type);
-        return switch (type.toLowerCase()) {
-            case "python" -> "python-flask";
-            case "java" -> "spring";
-            case "javascript" -> "nodejs-express";
-            default -> throw new IllegalArgumentException("Unsupported type: " + type);
-        };
-    }
-
-    private String sanitize(String input) {
-        // Rimuove slash iniziali
-        input = input.replaceAll("^/+", "");
-        // Sostituisce tutti i caratteri non alfanumerici con underscore
-        input = input.replaceAll("[^A-Za-z0-9]", "_");
-        // Aggiunge "get" se il metodo era get
-        return input;
-    }
-
-    private String sanitizeDockerServiceName(String s) {
-        // solo minuscole, sostituisce tutto ciò che non è alfanumerico con '-'
-        return s.toLowerCase().replaceAll("[^a-z0-9]+", "-");
+        ClientOptInput input = configurator.toClientOptInput();
+        // generate
+        new DefaultGenerator().opts(input).generate();
     }
 
     @Override
@@ -300,7 +213,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
             Map<String, Object> openapi = new LinkedHashMap<>();
             openapi.put("openapi", "3.0.0");
             openapi.put("info", Map.of(
-                    "title", sanitize(node.getLabel()),
+                    "title", GeneratorUtil.sanitize(node.getLabel()),
                     "version", "1.0.0",
                     "description", payload.getDescription()
             ));
@@ -315,8 +228,8 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                 // Costruzione parametri OpenAPI validi
                 List<Map<String, Object>> parameters = ep.getParameters().stream().map(p -> Map.of(
                         "name", p.getName(),
-                        "in", "query", // puoi cambiare in "path" se necessario
-                        "required", p.isRequired(),
+                        "in", "query",
+                            "required", p.isRequired(),
                         "schema", Map.of("type", p.getType().name().toLowerCase())
                 )).toList();
 
@@ -337,13 +250,57 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                                 )
                         ));
 
+                Map<String, Object> operation = new LinkedHashMap<>();
+                operation.put("summary", ep.getSummary());
+                operation.put("operationId", GeneratorUtil.toOperationId(path, method));
+                operation.put("responses", responses);
+
+                if (method.equals("post") || method.equals("put")
+                        || method.equals("patch") || method.equals("delete")) {
+
+                    // ===== JSON BODY =====
+                    Map<String, Object> properties = new LinkedHashMap<>();
+                    List<String> required = new ArrayList<>();
+
+
+
+                    for (Parameter p : ep.getParameters()) {
+                        properties.put(
+                                p.getName(),
+                                Map.of("type", p.getType().name().toLowerCase())
+                        );
+                        if (p.isRequired()) {
+                            required.add(p.getName());
+                        }
+                    }
+
+                    Map<String, Object> schema = new LinkedHashMap<>();
+                    schema.put("title", GeneratorUtil.toOperationId(path, method) + "Request");
+                    schema.put("type", "object");
+                    schema.put("properties", properties);
+                    if (!required.isEmpty()) {
+                        schema.put("required", required);
+                    }
+
+                    operation.put(
+                            "requestBody",
+                            Map.of(
+                                    "required", true,
+                                    "content", Map.of(
+                                            "application/json", Map.of(
+                                                    "schema", schema
+                                            )
+                                    )
+                            )
+                    );
+
+                } else {
+                    // ===== QUERY PARAMS (GET) =====
+                    operation.put("parameters", parameters);
+                }
+
                 paths.computeIfAbsent(path, k -> new LinkedHashMap<>())
-                        .put(method, Map.of(
-                                "summary", ep.getSummary(),
-                                "operationId", sanitize(path + "-" + method),
-                                "parameters", parameters,
-                                "responses", responses
-                        ));
+                        .put(method, operation);
             }
 
             openapi.put("paths", paths);
@@ -351,11 +308,12 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
             // Creo il DTO finale
             BundleGenerationRequestDTO dto = new BundleGenerationRequestDTO();
             dto.setType(payload.getLanguage());
-            dto.setProjectName(sanitize(node.getLabel()));
+            dto.setProjectName(GeneratorUtil.sanitize(node.getLabel()));
             dto.setApiSpec(openapi);
 
             // Outgoing calls
             dto.setOutgoingCalls(buildOutgoingCalls(node, nodeMap, diagram.getData().getConnections()));
+            dto.setInitiator(node.getPayload().getInitiator());
             requests.add(dto);
         }
 
@@ -365,6 +323,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
     private List<OutgoingCallDTO> buildOutgoingCalls(Node node, Map<String, Node> nodeMap, List<Connection> connections) {
         List<OutgoingCallDTO> outgoing = new ArrayList<>();
 
+        // each connection from this node
         for (Connection c : connections) {
             if (c.getSource().equals(node.getId())) {
 
@@ -378,9 +337,9 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
 
                 OutgoingCallDTO call = new OutgoingCallDTO();
                 call.setOperationId(
-                        sanitize(api.getPath() + "-" + api.getMethod().toLowerCase())
+                        GeneratorUtil.sanitize(api.getPath() + "-" + api.getMethod().toLowerCase())
                 );
-                call.setTargetService(sanitizeDockerServiceName(targetNode.getLabel()));
+                call.setTargetService(GeneratorUtil.sanitizeDockerServiceName(targetNode.getLabel()));
                 call.setHttpMethod(api.getMethod());
                 call.setPath(api.getPath());
                 call.setWeight(c.getWeight());

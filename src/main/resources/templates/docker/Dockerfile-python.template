@@ -13,5 +13,8 @@ COPY generated ./generated
 # Porta interna fissa (quella dello stub Connexion: 8080)
 EXPOSE 8080
 
+# Rendi visible openapi_server
+ENV PYTHONPATH=/app/generated
+
 # Avvia il server generato
-CMD ["python", "-m", "generated.openapi_server"]
+CMD ["python", "-u", "-m", "openapi_server"]

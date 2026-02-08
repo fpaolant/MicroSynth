@@ -1,50 +1,169 @@
-# locust.py.template.template
-from locust import HttpUser, task, between
+import json
 import random
+import string
+import re
+from itertools import cycle
+from locust import HttpUser, task, between
 
-# Mapping serviceName -> port (injected from docker-compose)
-ports = {
-    {{#each services}}
-    "{{this.projectName}}": {{this.port}},
-    {{/each}}
-}
+# -------------------------
+# Generated services config
+# -------------------------
+services = json.loads(
+    '''{{{json services}}}'''
+)
 
+if not services:
+    raise RuntimeError("No services defined in generated config")
+
+service_cycle = cycle(services)
+
+# -------------------------
+# Utils (same logic as backend)
+# -------------------------
+def sanitize_docker_service_name(s: str) -> str:
+    # s.toLowerCase().replaceAll("[^a-z0-9]+", "-")
+    return re.sub(r"[^a-z0-9]+", "-", s.lower())
+
+# -------------------------
+# Random data generators
+# -------------------------
+def random_string(length=8):
+    return "str_" + "".join(random.choices(string.ascii_lowercase, k=length))
+
+def random_value(schema):
+    if not schema:
+        return None
+
+    t = schema.get("type")
+
+    if t == "string":
+        return random_string()
+    if t == "integer":
+        return random.randint(0, 1000)
+    if t == "number":
+        return round(random.random() * 100, 2)
+    if t == "boolean":
+        return random.choice([True, False])
+
+    return None
+
+def build_object(schema):
+    props = schema.get("properties", {})
+    required = schema.get("required", [])
+
+    obj = {}
+    for name, prop_schema in props.items():
+        if name in required or random.choice([True, False]):
+            obj[name] = random_value(prop_schema)
+    return obj
+
+# -------------------------
+# Query param helpers
+# -------------------------
+def to_query_value(value):
+    # OpenAPI-compliant query serialization
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+# -------------------------
+# Locust User
+# -------------------------
 class DynamicUser(HttpUser):
+    # Dummy host required by Locust (absolute URLs are used instead)
+    host = "http://localhost"
+
     wait_time = between(1, 2)
 
     def on_start(self):
-        self.name = self.environment.parsed_options.service
-        self.config = next(s for s in services if s["projectName"] == self.name)
-        self.outgoing = self.config.get("outgoingCalls", [])
-        print(f"[START] User for {self.name}, outgoing calls = {len(self.outgoing)}")
+        # Assign each user to a service (round-robin)
+        self.config = next(service_cycle)
+        self.service_name = self.config["projectName"]
+
+        self.api = self.config.get("apiSpec", {})
+        self.paths = self.api.get("paths", {})
+
+        if not self.paths:
+            raise RuntimeError(
+                f"No paths defined for service {self.service_name}"
+            )
+
+        print(f"[START] User for {self.service_name}")
 
     @task
-    def perform_calls(self):
-        if not self.outgoing:
-            return
+    def call_random_endpoint(self):
+        # -------------------------
+        # Pick random path + method
+        # -------------------------
+        path, methods = random.choice(list(self.paths.items()))
+        method, spec = random.choice(list(methods.items()))
+        method = method.lower()
 
-        weighted = []
-        for oc in self.outgoing:
-            weighted.append((oc, oc.get("weight", 1)))
+        # OperationId for stats naming
+        operation_id = spec.get(
+            "operationId",
+            f"{method}_{path.replace('/', '_')}"
+        )
 
-        oc = random.choices(
-            population=[w[0] for w in weighted],
-            weights=[w[1] for w in weighted]
-        )[0]
+        # -------------------------
+        # Build base URL (Docker DNS safe)
+        # -------------------------
+        docker_service = sanitize_docker_service_name(self.service_name)
+        base_url = f"http://{docker_service}:8080"
+        url = f"{base_url}{path}"
 
-        target = oc["targetService"]
-        method = oc["httpMethod"].lower()
-        path = oc["path"]
-        params = oc.get("parameters", {})
+        params = None
+        body = None
 
-        port = ports[target]
-        url = f"http://{target}:{port}{path}"
-
-        print(f"[CALL] {self.name} -> {url} ({method})")
-
+        # -------------------------
+        # GET -> query params (ONLY in: query)
+        # -------------------------
         if method == "get":
-            self.client.get(url, params=params)
-        elif method == "post":
-            self.client.post(url, json=params)
+            params = {}
+            for p in spec.get("parameters", []):
+                if p.get("in") != "query":
+                    continue
+
+                schema = p.get("schema", {})
+                value = random_value(schema)
+                params[p["name"]] = to_query_value(value)
+
+        # -------------------------
+        # Non-GET -> request body
+        # -------------------------
         else:
-            self.client.request(method.upper(), url, json=params)
+            body_schema = (
+                spec.get("requestBody", {})
+                    .get("content", {})
+                    .get("application/json", {})
+                    .get("schema")
+            )
+            if body_schema:
+                body = build_object(body_schema)
+
+        # -------------------------
+        # Locust stats name
+        # -------------------------
+        stat_name = f"{self.service_name} | {operation_id}"
+
+        print(
+            f"[CALL] {stat_name} -> {method.upper()} {url} | "
+            f"params={params} body={body}"
+        )
+
+        with self.client.request(
+            method.upper(),
+            url,
+            params=params,
+            json=body,
+            name=stat_name,
+            catch_response=True,
+            timeout=5
+        ) as response:
+
+            if response.status_code >= 400:
+                response.failure(
+                    f"{self.service_name} -> "
+                    f"{operation_id} failed "
+                    f"({response.status_code})"
+                )

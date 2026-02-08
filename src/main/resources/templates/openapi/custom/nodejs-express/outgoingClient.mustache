@@ -3,86 +3,90 @@
 /**
 * outgoingCalls arriva da additionalProperties (CodegenConfigurator.addAdditionalProperty("outgoingCalls", ...))
 *
-* Struttura attesa per ogni call:
-* {
-*   operationId: string,
-*   targetService: string,
-*   httpMethod: string,
-*   path: string,
-*   port: number (di solito 8080 nel network docker),
-*   weight: number (0.1..1.0),
-*   parameters: [{ name, value }, ...]  // o oggetto equivalente
-* }
 */
 
-const outgoingCalls = [
-{{#outgoingCalls}}
-    {
-    operationId: "{{operationId}}",
-    targetService: "{{targetService}}",
-    httpMethod: "{{httpMethod}}",
-    path: "{{path}}",
-    port: {{port}},
-    weight: {{weight}},
-    parameters: [
-    {{#parameters}}
-        { name: "{{name}}", value: {{{jsonValue}}} },
-    {{/parameters}}
-    ]
-    },
-{{/outgoingCalls}}
-];
+const outgoingCalls = JSON.parse(
+`{{{outgoingCallsJson}}}`
+);
 
 function shouldExecute(weight) {
-if (weight == null) return true;
-const w = Number(weight);
-if (Number.isNaN(w)) return true;
-return Math.random() <= w;
+    if (weight == null) return true;
+    const w = Number(weight);
+    if (Number.isNaN(w)) return true;
+    return Math.random() <= w;
 }
 
 function buildUrl(call) {
-// Docker DNS: http://<serviceName>:<internalPort>
+    // Docker DNS: http://<serviceName>:<internalPort>
     const base = `http://${call.targetService}:${call.port}`;
     const p = call.path && call.path.startsWith('/') ? call.path : `/${call.path || ''}`;
     return base + p;
-    }
+}
 
-    function buildQuery(params) {
-    if (!params || !Array.isArray(params) || params.length === 0) return '';
+function buildQuery(params) {
+    if (!params || !Array.isArray(params) || params.length === 0)
+        return '';
     const usp = new URLSearchParams();
     for (const p of params) {
-    if (!p || p.name == null) continue;
-    usp.append(String(p.name), p.value == null ? '' : String(p.value));
+        if (!p || p.name == null) continue;
+        usp.append(String(p.name), p.value == null ? '' : String(p.value));
     }
     const q = usp.toString();
     return q ? `?${q}` : '';
-    }
+}
 
-    async function callOutgoing(operationId, body) {
+//
+//
+// Call an outgoing service based on operationId and body
+//
+//
+async function callOutgoing(operationId) {
+    console.log("[OUT] callOutgoing", operationId);
     const call = outgoingCalls.find(c => c.operationId === operationId);
     if (!call) return null;
 
-    if (!shouldExecute(call.weight)) return null;
-
-    const url = buildUrl(call) + buildQuery(call.parameters);
-
+    if (!shouldExecute(call.weight)) {
+        console.warn(`Skipping outgoing call to ${operationId} due to weight ${call.weight}`);
+        return null;
+    }
+    let url = buildUrl(call);
     const method = (call.httpMethod || 'GET').toUpperCase();
-
     const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' }
+        method,
+        headers: { 'Content-Type': 'application/json' }
     };
 
-    if (method !== 'GET' && method !== 'HEAD' && body != null) {
-    opts.body = JSON.stringify(body);
+    if (method !== 'GET' && method !== 'HEAD') {
+        const params = Array.isArray(call.parameters) ? call.parameters : [];
+        opts.body = JSON.stringify(
+            Object.fromEntries(params.map(({ name, value }) => [name, value]))
+        );
+    } else if (call.parameters?.length) {
+        call.parameters.length>0? url += buildQuery(call.parameters) : null;
     }
 
+    //
+    // Make the outgoing call
+    //
     // Node 18+ ha fetch built-in (node:20 ok)
     const res = await fetch(url, opts);
+
     const text = await res.text();
 
-    // best-effort JSON parse
-    try { return JSON.parse(text); } catch (_) { return text; }
+    // Handle the response
+    //
+    if (!res.ok) {
+        console.error(`Outgoing call to ${url} failed: ${res.status} ${res.statusText} - ${text}`);
+    } else {
+        console.log(`Outgoing call to ${url} succeeded: ${res.status} ${res.statusText} - ${text}`);
     }
 
-    module.exports = { callOutgoing };
+    // best-effort JSON parse
+    try {
+        return JSON.parse(text);
+    } catch (_) {
+        return text;
+    }
+}
+
+module.exports = { callOutgoing, outgoingCalls };

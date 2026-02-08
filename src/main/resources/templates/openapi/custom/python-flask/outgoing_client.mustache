@@ -1,0 +1,85 @@
+"""
+Outgoing client
+"""
+
+import random
+import requests
+import json
+
+OUTGOING_JSON = """
+{{{outgoingCallsJson}}}
+"""
+
+outgoing_calls = json.loads(OUTGOING_JSON)
+
+
+def should_execute(weight):
+    if weight is None:
+        return True
+    try:
+        return random.random() <= float(weight)
+    except (ValueError, TypeError):
+        return True
+
+
+def build_url(call):
+    base = f"http://{call['targetService']}:{call['port']}"
+    path = call.get("path", "")
+    if not path.startswith("/"):
+        path = "/" + path
+    return base + path
+
+
+def call_outgoing(operation_id):
+    print("[OUT] call_outgoing", operation_id)
+
+    call = next((c for c in outgoing_calls if c["operationId"] == operation_id), None)
+    if not call:
+        return None
+
+    if not should_execute(call.get("weight")):
+        print(f"[OUT] Skipping {operation_id} due to weight {call.get('weight')}")
+        return None
+
+    url = build_url(call)
+    method = call.get("httpMethod", "GET").upper()
+    params = call.get("parameters") or []
+
+    query_params = {}
+    body_params = {}
+
+    for p in params:
+        value = p["value"]
+        if method in ("GET", "HEAD"):
+            query_params[p["name"]] = value
+        else:
+            body_params[p["name"]] = value
+
+    try:
+        if method in ("GET", "HEAD"):
+            response = requests.request(
+                method,
+                url,
+                params=query_params
+            )
+        else:
+            response = requests.request(
+                method,
+                url,
+                json=body_params
+            )
+
+        print(f"[OUT] {method} {url} → {response.status_code}")
+
+        if not response.ok:
+            print("[OUT ERROR]", response.text)
+
+        try:
+            return response.json()
+        except ValueError:
+            return response.text
+
+    except Exception as e:
+        print("[OUT EXCEPTION]", e)
+        return None
+

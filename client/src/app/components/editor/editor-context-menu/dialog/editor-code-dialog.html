@@ -1,0 +1,44 @@
+<p-dialog
+  appendTo="body"
+  header="Header"
+  [modal]="true"
+  [(visible)]="dialogVisible"
+  [style]="{ width: '80rem', height: '50vh' }"
+  [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }"
+  [maximizable]="true"
+>
+  <ng-template #header>
+    <div class="inline-flex items-center justify-center gap-2">
+      <span class="font-bold whitespace-nowrap">Node <strong>{{ 'code'}}</strong></span>
+    </div>
+  </ng-template>
+  <span class="text-surface-500 dark:text-surface-400 block mb-8"
+    >Select the language and update code.</span>
+  
+  <div class="flex-1 h-[calc(100%-6rem)]">
+    <app-code-editor
+      class="h-full w-full block"
+      [code]="code"
+      [language]="language"
+      (codeChange)="onCodeChange($event)"
+      (hasErrorsChange)="hasCodeErrors = $event"
+    ></app-code-editor>
+  </div>
+
+  <ng-template #footer>
+    <p-button
+      label="Cancel"
+      [text]="true"
+      severity="secondary"
+      (click)="cancel()"
+    />
+    
+    <p-button
+      label="Save"
+      [outlined]="true"
+      [disabled]="hasCodeErrors"
+      severity="primary"
+      (click)="save()"
+    />
+  </ng-template>
+</p-dialog>

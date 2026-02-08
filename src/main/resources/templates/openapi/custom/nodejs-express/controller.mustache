@@ -1,0 +1,44 @@
+/**
+* The {{{classname}}} Controller file is a very simple one, which does not need to be changed manually,
+* unless there's a case where business logic routes the request to an entity which is not
+* the service.
+* The heavy lifting of the Controller item is done in Request.js - that is where request
+* parameters are extracted and sent to the service, and where response is handled.
+*/
+
+const Controller = require('./Controller');
+const service = require('../services/{{{classname}}}Service');
+const { callOutgoing, outgoingCalls } = require('../outgoingClient');
+
+{{#operations}}
+    {{#operation}}
+    const {{operationId}} = async (request, response) => {
+        console.log("[IN] Handling {{operationId}}", {
+            params: request.params,
+            query: request.query,
+            body: request.body
+        });
+
+        try {
+            for (const call of outgoingCalls) {
+                // outgoing call (weight inside outgoingClient)
+                await callOutgoing(call.operationId);
+            }
+            // standard OpenAPI Generator flow
+            await Controller.handleRequest(request, response, service.{{operationId}});
+        } catch (error) {
+            console.error("[OUT ERROR]", error);
+            Controller.sendError(response, error);
+        }
+    }
+
+    {{/operation}}
+{{/operations}}
+
+module.exports = {
+{{#operations}}
+    {{#operation}}
+        {{operationId}},
+    {{/operation}}
+{{/operations}}
+};
