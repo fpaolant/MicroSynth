@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class OpenApiGeneratorServiceImpl implements GeneratorService {
+    private final static int START_PORT = 8081;
 
 
     private final DelegateImplModelBuilder delegateImplModelBuilder;
@@ -44,35 +45,43 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
      * Each microservice is generated in a separate directory with its own OpenAPI spec, Dockerfile, and supporting files.
      * The method also generates a docker-compose.yml file to orchestrate all the services together, and a locust configuration for load testing.
      *
-     * @param requests
+     * @param requests - a list of BundleGenerationRequestDTO, each containing the OpenAPI spec and configuration for a single microservice to generate
      * @return File - the generated zip file containing all microservices and configuration
-     * @throws Exception
+     * @throws Exception if any error occurs during the generation process (e.g. file I/O errors, code generation errors, etc.)
      */
     public File generateBundle(List<BundleGenerationRequestDTO> requests) throws Exception {
+        log.info("[GENERATOR] Start bundle generation for n. {} of services ", requests.size());
+
         Path tempRootDir = Files.createTempDirectory("multi_generator_");
         List<Map<String, String>> services = new ArrayList<>();
         int portOffset = 0;
 
         for (BundleGenerationRequestDTO request : requests) {
+            log.info("[GENERATOR] Generating service {} with type {}", request.getProjectName(), request.getType());
             // Create project directory
             Path projectDir = tempRootDir.resolve(GeneratorUtil.sanitizeDockerServiceName(request.getProjectName()));
             Files.createDirectories(projectDir);
 
             // OpenAPI file creation
+            log.info("[GENERATOR] Start creating OpenAPI spec file");
             Path openapiFile = projectDir.resolve("openapi.json");
             String json = new com.fasterxml.jackson.databind.ObjectMapper()
                     .writerWithDefaultPrettyPrinter()
                     .writeValueAsString(request.getApiSpec());
             Files.writeString(openapiFile, json);
+            log.info("[GENERATOR] End creating OpenAPI spec file");
 
             // generate single service from openapi
+            log.info("[GENERATOR] Start generating code for single service {} with type {}", request.getProjectName(), request.getType());
             generateSingleService(request, openapiFile, projectDir);
+            log.info("[GENERATOR] End generating code for single service {}", request.getProjectName());
 
             // Port
-            int externalPort = 8081 + portOffset++;
+            int externalPort = START_PORT + portOffset++;
             String port = String.valueOf(externalPort);
 
             // write dockerFile in the project directory
+            log.info("[GENERATOR] Start creating Dockerfile");
             TemplateUtils.writeRenderedTemplate(
                     GeneratorUtil.getDockerTemplate(request.getType()),
                     projectDir.resolve("Dockerfile"),
@@ -81,8 +90,9 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                             "port", port
                     )
             );
+            log.info("[GENERATOR] End creating Dockerfile");
 
-            // Add to services list for docker-compose
+            // Add to services list for global docker-compose
             String serviceName = GeneratorUtil.sanitizeDockerServiceName(request.getProjectName());
 
             services.add(Map.of(
@@ -92,6 +102,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
             ));
         } // each node service
 
+        log.info("[GENERATOR] Start creating Locust Dockerfile");
         Path locustDir = tempRootDir.resolve("locust");
         Files.createDirectories(locustDir);
 
@@ -105,40 +116,47 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                 locustDir.resolve("Dockerfile"),
                 portByService
         );
+        log.info("[GENERATOR] End creating Locust Dockerfile");
 
         // Generate locustfile.py
         // only with initiator services, and pass the outgoing calls to log in locust
+        log.info("[GENERATOR] Start creating Locust locust.py config file");
         List<BundleGenerationRequestDTO> initiatorsRequests = requests.stream()
                 .filter(BundleGenerationRequestDTO::getInitiator)
-                .collect(Collectors.toList());
+                .toList();
         TemplateUtils.writeRenderedTemplate(
                 "locust/locust.py.template",
                 locustDir.resolve("locust.py"),
                 Map.of("services", initiatorsRequests)
         );
+        log.info("[GENERATOR] End creating Locust locust.py config file");
 
         // Docker compose for all services
+        log.info("[GENERATOR] Start creating docker-compose.yml for all services");
         Path composeFile = tempRootDir.resolve("docker-compose.yml");
         TemplateUtils.writeRenderedTemplate(
                 "docker/docker-compose-multi.yml.template",
                 composeFile,
                 Map.of("services", services)
         );
+        log.info("[GENERATOR] End creating docker-compose.yml for all services");
 
         // Final zip
+        log.info("[GENERATOR] Creating final zip file for the bundle");
         File zipFile = Files.createTempFile("bundle_", ".zip").toFile();
         ZipUtils.zipFolder(tempRootDir, zipFile);
 
+        log.info("[GENERATOR] End bundle generation");
         return zipFile;
     }
 
     /**
      * Generates a single microservice from an OpenAPI specification using OpenAPI Generator.
      * the generator is chosen based on the request type (e.g. "spring" for Java, "python-flask" for Python, etc.)
-     * @param request
-     * @param openapiFile
-     * @param projectDir
-     * @throws IOException
+     * @param request - the bundle generation request containing the OpenAPI spec and other configuration
+     * @param openapiFile - the path to the OpenAPI specification file to use for code generation
+     * @param projectDir - the directory where the generated code and supporting files should be placed
+     * @throws IOException if any error occurs during file I/O operations (e.g. writing generated code, creating directories, etc.)
      */
     private void generateSingleService(BundleGenerationRequestDTO request, Path openapiFile, Path projectDir) throws IOException {
         // Choose generator
@@ -153,26 +171,24 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                 new CodegenConfigurator()
                         .setInputSpec(openapiFile.toAbsolutePath().toString()) // specifica OpenAPI
                         .setGeneratorName(generatorName) // es. "spring", "python-flask", "nodejs-express"
-                        .setTemplateDir("src/main/resources/templates/openapi/custom/" + generatorName) // directory dei template personalizzati
+                        .setTemplateDir("src/main/resources/templates/openapi/custom/" + generatorName) // template directory
                         .setOutputDir
                                 (outputDir.toAbsolutePath().toString())
-                        .addAdditionalProperty("interfaceOnly", false) // genera solo le interfacce, non le implementazioni
-                        .addAdditionalProperty("generateSupportingFiles", true) // genera i supporting files (es. pom.xml, requirements.txt, ecc.)
-                        .addAdditionalProperty("useTags", "true"); // organizza le operazioni in classi separate per tag (es. path1Post → Path1Api, path2Get → Path2Api, ecc.)
+                        .addAdditionalProperty("interfaceOnly", false) // generate only interfaces no implementation
+                        .addAdditionalProperty("generateSupportingFiles", true) // generate supporting files (ex. pom.xml, requirements.txt, etc.)
+                        .addAdditionalProperty("useTags", "true"); // organize operations in separate class (ex. path1Post → Path1Api, path2Get → Path2Api, etc.)
 
-
-        //configurator.addAdditionalProperty("outgoingCalls", request.getOutgoingCalls()); // per i template, contiene la lista delle chiamate in uscita da loggare
+        log.info("[GENERATOR] Serializing service outgoing calls to JSON");
         ObjectMapper mapper = new ObjectMapper();
-
         String outgoingCallsJson = mapper.writeValueAsString(request.getOutgoingCalls());
 
         // Spring specific configuration (delegate pattern)
         if(generatorName.equals("spring")) {
+            log.info("[GENERATOR] Spring generator detected, start building delegate implementation model for service {}", request.getProjectName());
             configurator.addAdditionalProperty("outgoingCallsJson", GeneratorUtil.stringEscape(outgoingCallsJson));
             configurator.addAdditionalProperty("useSpringController", true)
                     .addAdditionalProperty("delegatePattern", true)
                     .addAdditionalProperty("useResponseEntity", true);
-
             DelegateImplModel delegateModel = delegateImplModelBuilder.build(request);
 
             configurator
@@ -180,27 +196,33 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                     .addAdditionalProperty("delegateOperations", delegateModel.getOperations())
                     .addAdditionalProperty("packageName", delegateModel.getPackageName())
                     .addAdditionalProperty("className", delegateModel.getClassName());
+            log.info("[GENERATOR] End building delegate implementation");
         } else {
             configurator.addAdditionalProperty("outgoingCallsJson", outgoingCallsJson);
-            configurator.addAdditionalProperty("delegatePattern", false); // per gli altri generatori (es. python-flask) generiamo tutto in un unico file, senza pattern delegate
+            configurator.addAdditionalProperty("delegatePattern", false); // other generator (es. python-flask) generate in a whole file, without pattern delegate
         }
 
         ClientOptInput input = configurator.toClientOptInput();
+        log.info("[GENERATOR] Start code generation with openapi tools for service {}", request.getProjectName());
         // generate
         new DefaultGenerator().opts(input).generate();
+        log.info("[GENERATOR] End code generation with openapi tools for service {}", request.getProjectName());
     }
 
     @Override
     public List<BundleGenerationRequestDTO> convertGraphToRequests(DiagramDTO diagram) {
+        log.info("[GENERATOR] Start Converting diagram to bundle generation requests for diagram {}", diagram.getName());
         List<BundleGenerationRequestDTO> requests = new ArrayList<>();
 
         // Mappa dei nodi per id
         Map<String, Node> nodeMap = diagram.getData().getNodes().stream()
                 .collect(Collectors.toMap(Node::getId, n -> n));
 
+        log.info("[GENERATOR] Start build OpenAPI spec for n. of nodes {}", diagram.getData().getNodes().size());
         for (Node node : diagram.getData().getNodes()) {
             NodePayload payload = node.getPayload();
 
+            log.info("[GENERATOR] build OpenAPI spec for node {} with label {}", node.getId(), node.getLabel());
             // Creazione OpenAPI skeleton
             Map<String, Object> openapi = new LinkedHashMap<>();
             openapi.put("openapi", "3.0.0");
@@ -212,7 +234,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
 
             Map<String, Map<String, Object>> paths = new LinkedHashMap<>();
 
-            // Aggiungo gli endpoint definiti nel nodo
+            // Add node endpoints to OpenAPI paths
             for (Endpoint ep : payload.getEndpoints()) {
                 String path = ep.getPath() == null || ep.getPath().isEmpty() ? "/" : ep.getPath();
                 String method = ep.getMethod() == null || ep.getMethod().isEmpty() ? "get" : ep.getMethod().toLowerCase();
@@ -296,8 +318,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
             }
 
             openapi.put("paths", paths);
-
-            // Creo il DTO finale
+            // Create final DTO for this node
             BundleGenerationRequestDTO dto = new BundleGenerationRequestDTO();
             dto.setType(payload.getLanguage());
             dto.setProjectName(GeneratorUtil.sanitize(node.getLabel()));
@@ -308,13 +329,15 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
             dto.setInitiator(node.getPayload().getInitiator());
             requests.add(dto);
         }
-
+        log.info("[GENERATOR] End build OpenAPI spec");
+        log.info("[GENERATOR] End converting diagram to bundle generation requests for diagram {}", diagram.getName());
         return requests;
     }
 
     private List<OutgoingCallDTO> buildOutgoingCalls(Node node, Map<String, Node> nodeMap, List<Connection> connections) {
         List<OutgoingCallDTO> outgoing = new ArrayList<>();
 
+        log.info("[GENERATOR] Start building outgoing calls for node {} with label {}", node.getId(), node.getLabel());
         // each connection from this node
         for (Connection c : connections) {
             if (c.getSource().equals(node.getId())) {
@@ -348,7 +371,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                 outgoing.add(call);
             }
         }
-
+        log.info("[GENERATOR] End building outgoing calls for node {}", node.getId());
         return outgoing;
     }
 
