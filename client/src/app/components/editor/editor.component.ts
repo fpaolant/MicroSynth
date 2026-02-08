@@ -42,7 +42,7 @@ import { CustomNodeComponent } from "./custom-node/custom-node.component";
 import { UniPortConnector } from "./util/uniport-connector";
 import { Connection, defaultNodePayload, Node } from "./presets";
 import { ComputedSocketPosition } from "./util/util";
-import { AreaExtra, NodePayload, Schemes, Shape } from "./types";
+import { AreaExtra, NodePayload, Position, Schemes, Shape } from "./types";
 import { DropdownChangeEvent, DropdownModule } from "primeng/dropdown";
 import { MinimapPlugin } from "rete-minimap-plugin";
 import {
@@ -216,15 +216,16 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     // listener of events in area
     this.area.addPipe((context) => {
       if (context.type === "nodepicked"){
+        this.diagramTouched = true;    
         this.nodeSelected.emit(this.editor.getNode(context.data.id));
       }
       if (context.type === "noderemoved"){
         this.nodeRemoved.emit(this.editor.getNode(context.data.id));
         this.nodeSelected.emit(null);
       }
-      if (context.type === "nodecreated")
+      if (context.type === "nodecreated"){
         this.nodeAdded.emit(this.editor.getNode(context.data.id));
-
+      }
       if (context.type === "connectioncreated"){
         this.connectionAdded.emit(context.data);
         this.connectionSelected.emit(null);
@@ -359,9 +360,9 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadingDiagram.set(true);
 
     const loadData = (): Observable<boolean[]> => {
-      const nodeCalls: Observable<boolean>[] = [];
+      const nodeCalls: Observable<boolean|void>[] = [];
       const connectionCalls: Observable<boolean>[] = [];
-
+      
       // nodes
       for (let node of this.diagram.nodes) {
         nodeCalls.push(
@@ -370,7 +371,8 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
             node.label,
             node.shape as Shape,
             node.payload as NodePayload,
-            node.weight
+            node.weight,
+            node.position as Position
           )
         );
       }
@@ -414,7 +416,12 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
         takeUntil(this.destroy$),
         switchMap(() => loadData()),
         take(1),
-        switchMap(() => of(this.reorder())),
+        switchMap(() => {
+          if (action === "generate") {
+           return of(this.reorder());
+          }
+          return of(true);
+        }),
         finalize(()=> {
           if(action !== 'init') this.diagramTouched = true;
           this.loadingDiagram.set(false);
@@ -428,9 +435,14 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
             c.targetNode = this.editor.getNode(c.target);
             c.sourceNode = this.editor.getNode(c.source);
           })
+
+          if (action === "init") {
+            this.updateVieport(this.diagram.viewport ?? { x: 0, y: 0, k: 1 });
+          }
             
           // });
           if (action === "import") {
+            this.updateVieport(this.diagram.viewport ?? { x: 0, y: 0, k: 1 });
             this.messageService.add({
               severity: "success",
               summary: "Graph loaded successfully",
@@ -456,6 +468,19 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
       });
   }
+
+  private updateVieport(viewport: { x: number; y: number; k: number }) {
+    if (this.diagram.viewport) {
+      const t = this.area.area.transform;
+      t.x = this.diagram.viewport.x;
+      t.y = this.diagram.viewport.y;
+      t.k = this.diagram.viewport.k;
+
+      // forza un refresh “pulito”
+      AreaExtensions.zoomAt(this.area, this.editor.getNodes());
+    }
+  }
+
 
   private addPresets(render: any) {
     const socketPositionWatcher = this.socketPositionWatcher;
@@ -553,8 +578,9 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     label: string = "S_" + (this.editor.getNodes().length + 1),
     shape: Shape = "circle",
     payload: NodePayload = defaultNodePayload(label),
-    weight: number = 0.0
-  ): Observable<boolean> {
+    weight: number = 0.0,
+    position: Position = { x: 0, y: 0 }
+  ): Observable<boolean|void> {
     const node = new Node(label, shape, {
       remove: async (data: Node) => {
         const nodeId = data.id;
@@ -566,7 +592,8 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
           data.label + " - Copy",
           data.shape,
           data.payload,
-          data.weight
+          data.weight,
+          data.position
         );
       },
       propertyChange: (key: string, value: any) => {
@@ -578,11 +605,16 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
     node.weight = weight;
     node.payload = payload;
     node.shape = shape;
-    // if(this.editor.getNodes().length == 0) {
-    //   node.payload.initiator = true;
-    // }
+    node.position = position;
 
-    return from(this.editor.addNode(node));
+    return from(this.editor.addNode(node)).pipe(
+      switchMap(() => {
+        if (position) {
+          return from(this.area.translate(node.id, position));
+        }
+        return of(true);
+      })
+    );
   }
 
   onConnectionChange(connection: Connection<Node, Node>) {
@@ -689,10 +721,20 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private exportAsJson() {
     const nodes = this.editor.getNodes();
     const connections = this.editor.getConnections();
-    let json = JSON.stringify({ nodes, connections }, null, 2);
+    const viewport = {
+      x: this.area.area.transform.x,
+      y: this.area.area.transform.y,
+      k: this.area.area.transform.k
+    }
 
+    // save position of nodes from the area plugin
+    nodes.forEach((node) => {
+      const view = this.area.nodeViews.get(node.id);
+      node.position = view ? { ...view.position } : { x: 0, y: 0 };
+    });
+    let json = JSON.stringify({ nodes, connections, viewport }, null, 2);
     if (this.exportFormatHandler !== null) {
-      json = this.exportFormatHandler(json);
+        json = this.exportFormatHandler(json);
     }
     return json;
   }

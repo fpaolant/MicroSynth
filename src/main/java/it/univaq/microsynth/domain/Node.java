@@ -30,6 +30,9 @@ public class Node implements Serializable {
     private String shape;
 
     @NotNull
+    private Position position;
+
+    @NotNull
     private NodePayload payload;
 
     @NotNull

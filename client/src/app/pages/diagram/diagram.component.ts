@@ -170,6 +170,8 @@ export class DiagramPage implements OnInit, AfterViewInit {
       data: diagramData
     };
 
+    console.log("Saving diagram", this.diagram);
+
     /*
       Save diagram to endpoint
     */
@@ -218,6 +220,7 @@ export class DiagramPage implements OnInit, AfterViewInit {
       shape: node.shape,
       payload: node.payload,
       weight: node.weight,
+      position: node.position
     }));
 
     const diagramConnections: DiagramConnection[] = parsedData.connections.map(
@@ -235,6 +238,7 @@ export class DiagramPage implements OnInit, AfterViewInit {
     const diagramData: DiagramData = {
       nodes: diagramNodes,
       connections: diagramConnections,
+      viewport: parsedData.viewport
     };
 
     return JSON.stringify(diagramData, null, 2);
@@ -300,7 +304,6 @@ export class DiagramPage implements OnInit, AfterViewInit {
 
   onDockerDownload($event: any) {
     if(!this.diagram) return;
-    console.log("Exporting docker compose for diagram",this.project?.id, this.diagram.id);
     this.exportService.exportDockerCompose(this.project!.id, this.diagram.id!).subscribe({
       next: (blob: Blob) => {
         // Crea un oggetto URL temporaneo per il blob

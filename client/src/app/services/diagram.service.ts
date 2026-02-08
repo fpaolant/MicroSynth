@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { BaseDocument } from './model/response.document';
-import { ConnectionPayload, NodePayload } from '../components/editor/types';
+import { ConnectionPayload, NodePayload, Position } from '../components/editor/types';
 
 
 
@@ -20,6 +20,11 @@ export interface Diagram {
 export interface DiagramData {
   nodes: DiagramNode[];
   connections: DiagramConnection[];
+  viewport?: {
+    x: number;
+    y: number;
+    k: number;
+  }
 }
 
 export interface DiagramConnection {
@@ -38,6 +43,7 @@ export interface DiagramNode {
   shape: string;
   payload: NodePayload;
   weight: number;
+  position: Position;
 }
 
 interface GenerateDiagramParams {

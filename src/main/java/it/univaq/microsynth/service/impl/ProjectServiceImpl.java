@@ -194,6 +194,7 @@ public class ProjectServiceImpl implements ProjectService {
                     id,
                     "S " + (i + 1),
                     "circle",
+                    new Position(0.0, 0.0),
                     this.generateRandomNodePayload("s-" + (i + 1), "/path-" + (i + 1)),
                     0.0
             ));
@@ -269,7 +270,7 @@ public class ProjectServiceImpl implements ProjectService {
         Diagram diagram = new Diagram();
         diagram.setId(UUID.randomUUID().toString());
         diagram.setName("Generated System");
-        diagram.setData(new DiagramData(nodes, connections));
+        diagram.setData(new DiagramData(nodes, connections, new Viewport(0.0, 0.0, 1.0)));
 
         return diagram;
     }

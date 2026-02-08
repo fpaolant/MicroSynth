@@ -1,5 +1,5 @@
 import { ClassicPreset } from "rete";
-import { ApiCall, ApiResponse, ConnectionPayload, Endpoint, Language, NodePayload, Parameter, ParameterValue, Schemes, Shape } from "./types";
+import { ApiCall, ApiResponse, ConnectionPayload, Endpoint, Language, NodePayload, Parameter, ParameterValue, Position, Schemes, Shape } from "./types";
 import { CurveFactory } from "d3-shape";
 
 
@@ -49,6 +49,7 @@ export class Node extends ClassicPreset.Node {
   height = 80;
   payload: NodePayload = defaultNodePayload(this.label);
   weight = 0.0;
+  position: Position = { x: 0, y: 0 };
 
   remove: (c: Node) => void;
   duplicate: (c: Node) => void;

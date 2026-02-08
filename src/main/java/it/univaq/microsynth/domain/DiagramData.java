@@ -27,5 +27,7 @@ public class DiagramData implements Serializable {
     @NotNull
     private List<Connection> connections;
 
+    @NotNull
+    private Viewport viewport;
 }
 
