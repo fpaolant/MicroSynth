@@ -43,13 +43,12 @@ db.users.insertMany([
 /* ================= PROJECTS ================ */
 db.createCollection('projects');
 
-db.projects.insertMany([
+/*db.projects.insertMany([
     {
         _id: ObjectId('6817b0735e351d06c10eb2ae'),
         name: 'my project 3',
         owner: 'admin',
         diagrams: [
-            /* ---------- Diagram 1 ---------- */
             {
                 id: '450b874d-ad1c-483c-aa76-029c947b9bd9',
                 name: 'prova 1',
@@ -108,7 +107,6 @@ db.projects.insertMany([
                     ]
                 }
             },
-            /* ---------- Diagram 2 ---------- */
             {
                 id: '61851a12-a958-458e-ac48-21d977826956',
                 name: 'prova',
@@ -145,4 +143,4 @@ db.projects.insertMany([
         ],
         _class: 'it.univaq.microsynth.domain.Project'
     }
-]);
+]);*/
