@@ -1,6 +1,11 @@
 # MicroSynth #
 
-MicroSynth is a web based app written in Angular2+, Spring Boot, Mongo DB.
+MicroSynth is a web based app written in Angular2+, Spring Boot, MongoDB for the automatic generation of synthetic microservice-based systems.
+It allows users to model, generate, and export microservice systems starting from a high-level graphical representation.
+Its goal is to provide a controlled environment for experimentation, benchmarking, and the study of distributed architectures, drastically reducing the time required to create complex systems.
+
+| ![descrizione](https://github.com/fpaolant/MicroSynth/blob/main/client/src/public/img/microsynth_home_display_800.png) |
+|:--:|
 
 ## Fast run
 
