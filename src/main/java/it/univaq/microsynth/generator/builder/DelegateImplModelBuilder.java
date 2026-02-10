@@ -169,7 +169,6 @@ public class DelegateImplModelBuilder {
                 }
                 return "List<Object>";
             case "object":
-                // oggetti inline → Map
                 return "Map<String, Object>";
             default:
                 return "Object";

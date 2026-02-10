@@ -9,6 +9,7 @@ const outgoingCalls = JSON.parse(
 `{{{outgoingCallsJson}}}`
 );
 
+// e.g. weight=0.5 >> 50% chance to execute the call
 function shouldExecute(weight) {
     if (weight == null) return true;
     const w = Number(weight);
@@ -16,6 +17,7 @@ function shouldExecute(weight) {
     return Math.random() <= w;
 }
 
+// Build the full URL for the outgoing call
 function buildUrl(call) {
     // Docker DNS: http://<serviceName>:<internalPort>
     const base = `http://${call.targetService}:${call.port}`;
@@ -23,6 +25,7 @@ function buildUrl(call) {
     return base + p;
 }
 
+// Build query string for GET parameters
 function buildQuery(params) {
     if (!params || !Array.isArray(params) || params.length === 0)
         return '';
@@ -43,12 +46,15 @@ function buildQuery(params) {
 async function callOutgoing(operationId) {
     console.log("[OUT] callOutgoing", operationId);
     const call = outgoingCalls.find(c => c.operationId === operationId);
-    if (!call) return null;
+    if (!call) {
+        throw new Error(`Outgoing operation ${operationId} not found`);
+    }
 
     if (!shouldExecute(call.weight)) {
         console.warn(`Skipping outgoing call to ${operationId} due to weight ${call.weight}`);
-        return null;
+        return;
     }
+
     let url = buildUrl(call);
     const method = (call.httpMethod || 'GET').toUpperCase();
     const opts = {
@@ -70,13 +76,14 @@ async function callOutgoing(operationId) {
     //
     // Node 18+ ha fetch built-in (node:20 ok)
     const res = await fetch(url, opts);
-
     const text = await res.text();
 
     // Handle the response
     //
     if (!res.ok) {
-        console.error(`Outgoing call to ${url} failed: ${res.status} ${res.statusText} - ${text}`);
+        throw new Error(
+            `FAIL from service ${call.targetService} during call to ${call.operationId}`
+        );
     } else {
         console.log(`Outgoing call to ${url} succeeded: ${res.status} ${res.statusText} - ${text}`);
     }

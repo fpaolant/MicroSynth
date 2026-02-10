@@ -20,14 +20,18 @@ const { callOutgoing, outgoingCalls } = require('../outgoingClient');
         });
 
         try {
-            for (const call of outgoingCalls) {
-                // outgoing call (weight inside outgoingClient)
-                await callOutgoing(call.operationId);
-            }
+            // in parallel every outgoing call (weight inside outgoingClient)
+            await Promise.all(
+                outgoingCalls.map(c => callOutgoing(c.operationId))
+            );
             // standard OpenAPI Generator flow
-            await Controller.handleRequest(request, response, service.{{operationId}});
+            await Controller.handleRequest(
+                    request,
+                    response,
+                    service.{{operationId}}
+            );
         } catch (error) {
-            console.error("[OUT ERROR]", error);
+            console.error("[OUT ERROR]", error.message);
             Controller.sendError(response, error);
         }
     }

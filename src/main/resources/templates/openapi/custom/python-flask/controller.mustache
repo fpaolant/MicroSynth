@@ -117,11 +117,11 @@ def {{operationId}}({{#allParams}}{{^isBodyParam}}{{paramName}}{{/isBodyParam}}{
 {{/allParams}}
 
     ###
-    ### OUTGOING CALLS (best-effort) ###
+    ### OUTGOING CALLS (fail-fast) ###
     ###
     print("[IN] handle {{operationId}} with body:", body)
 
-    # outgoing calls (best-effort)
+    # outgoing calls (fail fast)
     try:
         for call in outgoing_calls:
             call_outgoing(call["operationId"])

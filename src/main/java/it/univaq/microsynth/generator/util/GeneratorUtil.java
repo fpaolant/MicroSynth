@@ -67,7 +67,7 @@ public class GeneratorUtil {
      * @return the generated operationId (e.g., "path3Post")
      */
     public static String toOperationId(String path, String method) {
-        // /path-3 → path3
+        // /path-3 -> path3
         String cleanPath = path
                 .replaceAll("^/+", "")
                 .replaceAll("[^A-Za-z0-9]", " ");
@@ -77,7 +77,7 @@ public class GeneratorUtil {
                 .map(s -> Character.toUpperCase(s.charAt(0)) + s.substring(1))
                 .collect(Collectors.joining());
 
-        // post → Post
+        // post -> Post
         String camelMethod =
                 Character.toUpperCase(method.toLowerCase().charAt(0)) +
                         method.toLowerCase().substring(1);

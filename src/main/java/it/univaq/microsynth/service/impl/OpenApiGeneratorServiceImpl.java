@@ -176,7 +176,7 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                                 (outputDir.toAbsolutePath().toString())
                         .addAdditionalProperty("interfaceOnly", false) // generate only interfaces no implementation
                         .addAdditionalProperty("generateSupportingFiles", true) // generate supporting files (ex. pom.xml, requirements.txt, etc.)
-                        .addAdditionalProperty("useTags", "true"); // organize operations in separate class (ex. path1Post → Path1Api, path2Get → Path2Api, etc.)
+                        .addAdditionalProperty("useTags", "true"); // organize operations in separate class (ex. path1Post -> Path1Api, path2Get → Path2Api, etc.)
 
         log.info("[GENERATOR] Serializing service outgoing calls to JSON");
         ObjectMapper mapper = new ObjectMapper();

@@ -12,7 +12,7 @@ OUTGOING_JSON = """
 
 outgoing_calls = json.loads(OUTGOING_JSON)
 
-
+# e.g. weight=0.5 -> 50% chance to execute the call
 def should_execute(weight):
     if weight is None:
         return True
@@ -21,7 +21,7 @@ def should_execute(weight):
     except (ValueError, TypeError):
         return True
 
-
+# Build the full URL for the outgoing call
 def build_url(call):
     base = f"http://{call['targetService']}:{call['port']}"
     path = call.get("path", "")
@@ -29,13 +29,15 @@ def build_url(call):
         path = "/" + path
     return base + path
 
-
+#
+# Call an outgoing service based on operationId and body
+#
 def call_outgoing(operation_id):
     print("[OUT] call_outgoing", operation_id)
 
     call = next((c for c in outgoing_calls if c["operationId"] == operation_id), None)
     if not call:
-        return None
+        raise RuntimeError(f"Outgoing operation {operation_id} not found")
 
     if not should_execute(call.get("weight")):
         print(f"[OUT] Skipping {operation_id} due to weight {call.get('weight')}")
@@ -50,6 +52,11 @@ def call_outgoing(operation_id):
 
     for p in params:
         value = p["value"]
+
+        # normalize boolean
+        if isinstance(value, bool):
+            value = "true" if value else "false"
+
         if method in ("GET", "HEAD"):
             query_params[p["name"]] = value
         else:
@@ -69,10 +76,14 @@ def call_outgoing(operation_id):
                 json=body_params
             )
 
-        print(f"[OUT] {method} {url} → {response.status_code}")
+        print(f"[OUT] {method} {url} -> {response.status_code}")
 
         if not response.ok:
             print("[OUT ERROR]", response.text)
+            raise RuntimeError(
+                f"FAIL from service {call['targetService']} during call to {operation_id}: "
+                f"{response.status_code} {response.text}"
+            )
 
         try:
             return response.json()
@@ -81,5 +92,7 @@ def call_outgoing(operation_id):
 
     except Exception as e:
         print("[OUT EXCEPTION]", e)
-        return None
+        raise RuntimeError(
+            f"FAIL from service {call['targetService']} during call to {operation_id}: {e}"
+        ) from e
 

@@ -9,9 +9,11 @@ import java.util.HashMap;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 
 import org.openapitools.api.DefaultApiDelegate;
 import org.openapitools.api.outgoing.OutgoingCallService;
+
 
 {{#modelImports}}
 import org.openapitools.model.{{.}};
@@ -32,32 +34,33 @@ public class {{className}} implements DefaultApiDelegate {
         {{{logLine}}}
 
         boolean allOk = true;
+        try {
+                // ================= OUTGOING CALLS =================
+                {{#outgoingCalls}}
+                Map<String, Object> oc_params_{{operationId}} = new HashMap<>();
+                {{#parameters}}
+                    try {
+                        oc_params_{{operationId}}.put("{{name}}",{{{jsonValueLiteral}}});
+                    } catch (Exception e) {
+                        oc_params_{{operationId}}.put("{{name}}", null);
+                    }
+                {{/parameters}}
 
-        // ================= OUTGOING CALLS =================
-        {{#outgoingCalls}}
-        Map<String, Object> oc_params_{{operationId}} = new HashMap<>();
-        {{#parameters}}
-            try {
-                oc_params_{{operationId}}.put("{{name}}",{{{jsonValueLiteral}}});
+                outgoingCallService.call(
+                        "{{operationId}}",
+                        oc_params_{{operationId}}
+                );
+                {{/outgoingCalls}}
+                // ==================================================
+
+                log.info("All outgoing respond succesfully");
+                return ResponseEntity.ok().build();
             } catch (Exception e) {
-                oc_params_{{operationId}}.put("{{name}}", null);
+                log.error("Outgoing call failed {}", e);
+                return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", e.getMessage()));
             }
-        {{/parameters}}
-
-        boolean ok_{{operationId}} = outgoingCallService.call("{{operationId}}", oc_params_{{operationId}});
-        log.info("response from {{operationId}} " + ok_{{operationId}});
-
-        allOk = allOk && ok_{{operationId}};
-
-        {{/outgoingCalls}}
-        // ==================================================
-
-        if (allOk) {
-            log.info("All outgoing respond succesfully");
-            return ResponseEntity.ok().build();
-        }
-        log.info("Some outgoing calls respond with error");
-        return ResponseEntity.status(500).build();
     }
  {{/delegateOperations}}
 

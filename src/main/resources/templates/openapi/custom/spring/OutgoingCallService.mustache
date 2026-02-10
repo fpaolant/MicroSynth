@@ -87,11 +87,13 @@ private static void loadFromJson() {
 // -------------------------
 // Public API
 // -------------------------
-public boolean call(String operationId, Map<String, Object> params) {
+public void call(String operationId, Map<String, Object> params) {
     OutgoingCall call = CALLS.get(operationId);
     if (call == null) {
         log.warn("Outgoing call '{}' not configured", operationId);
-        return true;
+        throw new IllegalStateException(
+            "Outgoing operation '" + operationId + "' not configured"
+        );
     }
 
     double p = RANDOM.nextDouble();
@@ -100,7 +102,7 @@ public boolean call(String operationId, Map<String, Object> params) {
             "Outgoing call '{}' skipped (p={} > weight={})",
             operationId, p, call.weight
         );
-        return true;
+        return;
     }
 
     try {
@@ -130,13 +132,15 @@ public boolean call(String operationId, Map<String, Object> params) {
             response = restTemplate.exchange(call.url, call.method, entity, Object.class);
         }
 
-        HttpStatus status = response.getStatusCode();
-
-        if (status.is2xxSuccessful()) {
-            log.info("Outgoing call '{}' completed successfully ({})", operationId, status.value());
-            return true;
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException(
+                "FAIL from service during call to " + operationId +
+                " (" + response.getStatusCode().value() + ")"
+            );
         }
-        return false;
+
+        HttpStatus status = response.getStatusCode();
+        log.info("Outgoing call '{}' completed successfully ({})", operationId, status.value());
 
     } catch (HttpClientErrorException e) {
         log.warn(
@@ -145,10 +149,19 @@ public boolean call(String operationId, Map<String, Object> params) {
             e.getStatusCode(),
             e.getResponseBodyAsString()
         );
-        return false;
-    } catch (Exception ex) {
+        throw new RuntimeException(
+            "FAIL from service during call to " + operationId +
+            " (" + e.getStatusCode().value() + "): " +
+            e.getResponseBodyAsString(),
+            e
+        );
+    } catch (Exception e) {
         log.error("Outgoing call '{}' FAILED: {}", operationId, ex.getMessage(), ex);
-        return false;
+        throw new RuntimeException(
+            "FAIL from service during call to " + operationId +
+            ": " + e.getMessage(),
+            e
+        );
     }
 }
 
