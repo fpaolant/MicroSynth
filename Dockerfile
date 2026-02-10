@@ -10,7 +10,7 @@ RUN mvn dependency:go-offline -B
 
 # Copy the code and compile the project
 COPY src ./src
-RUN mvn package -DskipTests
+RUN mvn clean package -DskipTests
 
 # Step 2: Run
 FROM amazoncorretto:17.0.12-alpine3.19

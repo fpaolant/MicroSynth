@@ -18,4 +18,4 @@ services:
     environment:
       SERVICE: {{services.0.name}}
     ports:
-      - "80:8089"
+      - "8089:8089"

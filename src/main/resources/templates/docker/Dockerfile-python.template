@@ -3,18 +3,14 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Installa i requirements
+# Install requirements
 COPY generated/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia l'intero stub
 COPY generated ./generated
 
-# Porta interna fissa (quella dello stub Connexion: 8080)
 EXPOSE 8080
 
-# Rendi visible openapi_server
 ENV PYTHONPATH=/app/generated
 
-# Avvia il server generato
 CMD ["python", "-u", "-m", "openapi_server"]

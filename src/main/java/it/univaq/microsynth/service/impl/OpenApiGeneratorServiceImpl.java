@@ -20,8 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,7 +30,8 @@ import java.util.stream.Collectors;
 @Service
 public class OpenApiGeneratorServiceImpl implements GeneratorService {
     // Starting port for generated services, each service will get a different port incrementing this value
-    private final static int START_PORT = 8081;
+    private final static int START_PORT = 8091;
+
     // Builder for creating the model used to generate the delegate implementation in Spring services
     private final DelegateImplModelBuilder delegateImplModelBuilder;
 
@@ -159,12 +159,19 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
         Path outputDir = projectDir.resolve("generated");
         Files.createDirectories(outputDir);
 
+        Path templateBaseDir = TemplateUtils.extractTemplates(generatorName);
+        Path templateDir = templateBaseDir.resolve(generatorName);
+
+        Files.walk(templateDir).forEach(p ->
+                log.info("[TEMPLATE] {}", p)
+        );
+
         // Generate code with OpenAPI Generator
         CodegenConfigurator configurator =
                 new CodegenConfigurator()
                         .setInputSpec(openapiFile.toAbsolutePath().toString()) // specifica OpenAPI
                         .setGeneratorName(generatorName) // es. "spring", "python-flask", "nodejs-express"
-                        .setTemplateDir("src/main/resources/templates/openapi/custom/" + generatorName) // template directory
+                        .setTemplateDir(templateDir.toString()) // template directory
                         .setOutputDir
                                 (outputDir.toAbsolutePath().toString())
                         .addAdditionalProperty("interfaceOnly", false) // generate only interfaces no implementation
