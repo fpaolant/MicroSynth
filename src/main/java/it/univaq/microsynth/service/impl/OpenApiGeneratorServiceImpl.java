@@ -270,6 +270,8 @@ public class OpenApiGeneratorServiceImpl implements GeneratorService {
                 operation.put("summary", ep.getSummary());
                 operation.put("operationId", GeneratorUtil.toOperationId(path, method));
                 operation.put("responses", responses);
+                operation.put("x-complexity",
+                        ep.getComplexity() != null ? ep.getComplexity() : 0);
 
                 if (method.equals("post") || method.equals("put")
                         || method.equals("patch") || method.equals("delete")) {

@@ -49,6 +49,8 @@ public class DelegateImplModelBuilder {
                 DelegateOperationModel om = new DelegateOperationModel();
                 om.setOperationId((String) op.get("operationId"));
                 om.setHttpMethod(methodEntry.getKey().toUpperCase());
+                om.setComplexity((Integer) op.get("x-complexity"));
+
 
                 // operation parameters
                 List<DelegateParamModel> params = new ArrayList<>();

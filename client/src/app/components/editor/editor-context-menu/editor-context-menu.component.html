@@ -316,6 +316,11 @@
           ></p-button>
         </div>
 
+        <div class="mb-8 flex flex-col gap-4">
+          <div class="text-sm font-semibold flex flex-row justify-between mx-2"><span>Complexity</span> <span class="ml-4 text-surface-500">{{ endpoint.get('complexity')?.value }}</span></div>
+          <p-slider class="mx-2" formControlName="complexity" [min]="1" [max]="100" step="10" />
+        </div>
+
         <!-- PATH -->
         <p-floatlabel variant="on" class="mb-4">
           <input
@@ -469,30 +474,30 @@
             (click)="addResponse(ei)"
           />
         </div>
-        <button
+        <!-- <button
             pButton
             label="Code"
             icon="pi pi-check"
             size="small"
             [disabled]="formNode.get('endpoints')?.value.length === 0"
             (click)="openCodeEditorDialog(ei)"
-        ></button>
+        ></button> -->
       </div>
     </div>
   </div>
 
   <div class="flex justify-end mt-4">
-    <button
+    <!-- <button
       pButton
       type="submit"
       label="Apply"
       icon="pi pi-check"
       size="small"
       [disabled]="formNode.invalid || formNode.untouched"
-    ></button>
+    ></button> -->
   </div>
 
 
-  <editor-code-dialog #codeEditorDialog></editor-code-dialog>
+  <!-- <editor-code-dialog #codeEditorDialog></editor-code-dialog> -->
 
 </form>

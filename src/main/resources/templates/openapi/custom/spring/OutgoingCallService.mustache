@@ -155,12 +155,12 @@ public void call(String operationId, Map<String, Object> params) {
             e.getResponseBodyAsString(),
             e
         );
-    } catch (Exception e) {
+    } catch (Exception ex) {
         log.error("Outgoing call '{}' FAILED: {}", operationId, ex.getMessage(), ex);
         throw new RuntimeException(
             "FAIL from service during call to " + operationId +
-            ": " + e.getMessage(),
-            e
+            ": " + ex.getMessage(),
+            ex
         );
     }
 }

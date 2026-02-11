@@ -33,7 +33,12 @@ public class {{className}} implements DefaultApiDelegate {
     public ResponseEntity<Object> {{operationId}}({{methodSignature}}) {
         {{{logLine}}}
 
-        boolean allOk = true;
+        // Simulate overhead based on x-complexity
+        // --- simulate service workload from 3k to 300k iterations ---
+        int complexity = {{complexity}};
+        simulateOverhead(complexity);
+        log.info("Finished complexity simulation ({}) for {{operationId}}", complexity);
+
         try {
                 // ================= OUTGOING CALLS =================
                 {{#outgoingCalls}}
@@ -63,5 +68,24 @@ public class {{className}} implements DefaultApiDelegate {
             }
     }
  {{/delegateOperations}}
+
+
+    private void simulateOverhead(int complexity) {
+        // CPU overhead
+        double dummy = 0;
+        int iterations = complexity * 3000;
+
+        for (int i = 0; i < iterations; i++) {
+            dummy += Math.random() * Math.random();
+        }
+
+        // I/O delay
+        try {
+            long delayMillis = (long) ((complexity / 200.0) * 1000);
+            Thread.sleep(delayMillis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 
 }

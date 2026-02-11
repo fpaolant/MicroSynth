@@ -37,6 +37,8 @@ import { CheckboxModule } from "primeng/checkbox";
 import { TooltipModule } from "primeng/tooltip";
 import { Dialog } from "primeng/dialog";
 import { EditorCodeDialog } from "./dialog/editor-code-dialog";
+import { SliderModule } from 'primeng/slider';
+import { debounceTime, Subscription } from "rxjs";
 
 @Component({
   selector: "editor-context-menu",
@@ -54,7 +56,8 @@ import { EditorCodeDialog } from "./dialog/editor-code-dialog";
     SelectModule,
     CheckboxModule,
     TooltipModule,
-    EditorCodeDialog
+    EditorCodeDialog,
+    SliderModule
   ],
   templateUrl: "./editor-context-menu.component.html",
   styleUrl: "./editor-context-menu.component.scss",
@@ -83,6 +86,9 @@ export class EditorContextMenuComponent implements OnChanges {
   showApiCall: boolean=false;
   readonlyMethod: boolean=false;
 
+  private connectionSub?: Subscription;
+  private nodeSub?: Subscription;
+
 
   constructor(
     private fb: FormBuilder,
@@ -105,7 +111,7 @@ export class EditorContextMenuComponent implements OnChanges {
 
       // get node target endpoints
       this.availableEndpoints = this.connection.targetNode?.payload.endpoints || []
-      console.log("connection",this.connection)
+      
       const endpointPath = this.connection.payload.endpoint?.path;
 
       // if selected endpoint is no longer available
@@ -131,6 +137,28 @@ export class EditorContextMenuComponent implements OnChanges {
 
         this.showApiCall = true
       }
+
+      // clean up previous subscription if exists
+      this.connectionSub?.unsubscribe();
+      // subscribe to form changes
+      this.connectionSub = this.formConnection.valueChanges
+      .pipe(debounceTime(200)) // evita emissioni eccessive
+      .subscribe(value => {
+        if (!this.formConnection.valid) return;
+
+        const updatedConnection: Connection<Node, Node> = {
+          ...this.connection!,
+          label: value.label,
+          weight: value.weight,
+          payload: {
+            ...this.connection!.payload,
+            apiCall: value.payload.apiCall,
+            endpoint: value.payload.endpoint
+          }
+        };
+
+        this.connectionUpdated.emit(updatedConnection);
+      });
     }
 
     // NODE FORM
@@ -140,6 +168,40 @@ export class EditorContextMenuComponent implements OnChanges {
         weight: [this.node.weight ?? 0.1, Validators.required],
         payload: this.fbService.nodePayloadForm(this.node.payload)
       });
+
+      this.nodeSub?.unsubscribe();
+
+      this.nodeSub = this.formNode.valueChanges
+        .pipe(debounceTime(200))
+        .subscribe(value => {
+              if (!this.formNode.valid) return;
+              if (!this.node) return;
+
+              const updatedNode: Node = {
+                ...this.node!,
+                label: value.label,
+                weight: value.weight,
+                payload: {
+                  ...this.node!.payload,
+                  basePath: value.payload.basePath,
+                  description: value.payload.description,
+                  language: value.payload.language,
+                  endpoints: value.payload.endpoints,
+                  initiator: value.payload.initiator
+                },
+                hasInput: this.node.hasInput,
+                addInput: this.node.addInput,
+                removeInput: this.node.removeInput,
+                hasOutput: this.node.hasOutput,
+                addOutput: this.node.addOutput,
+                removeOutput: this.node.removeOutput,
+                hasControl: this.node.hasControl,
+                addControl: this.node.addControl,
+                removeControl: this.node.removeControl
+              };
+
+          this.nodeUpdated.emit(updatedNode);
+        });
       
     }
   }

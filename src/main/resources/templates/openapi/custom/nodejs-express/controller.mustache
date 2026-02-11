@@ -10,6 +10,32 @@ const Controller = require('./Controller');
 const service = require('../services/{{{classname}}}Service');
 const { callOutgoing, outgoingCalls } = require('../outgoingClient');
 
+const sleep = (ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+const simulateOverhead = async (complexity) => {
+    // CPU overhead (blocca l'event loop mentre gira)
+    let dummy = 0;
+    const iterations = complexity * 3000;
+
+    for (let i = 0; i < iterations; i++) {
+    const r1 = Math.random();
+    const r2 = Math.random();
+    dummy += r1 * r2;
+    }
+
+    // I/O delay (NON blocca l'event loop)
+    const delayMs = (complexity / 200) * 1000; // da secondi a ms
+    await sleep(delayMs);
+
+    return dummy; // opzionale, giusto per evitare ottimizzazioni strane
+}
+
+
+
+
+
 {{#operations}}
     {{#operation}}
     const {{operationId}} = async (request, response) => {
@@ -19,6 +45,13 @@ const { callOutgoing, outgoingCalls } = require('../outgoingClient');
             body: request.body
         });
 
+        // ================= SIMULATE COMPLEXITY =================
+        //   simulate service workload from 3k to 300k iterations
+        const complexity = {{vendorExtensions.x-complexity}};
+        await simulateOverhead(complexity);
+        console.log("Finished complexity simulation (" + complexity + ") for {{operationId}}");
+
+        // ================= OUTGOING CALLS ======================
         try {
             // in parallel every outgoing call (weight inside outgoingClient)
             await Promise.all(

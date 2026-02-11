@@ -9,6 +9,17 @@ from {{packageName}} import util
 
 from openapi_server.outgoing_client import call_outgoing, outgoing_calls
 
+def simulate_overhead(complexity: int):
+    import time
+    import random
+
+    # CPU overhead
+    for _ in range(complexity * 3000):
+        _ = random.random() * random.random()
+
+    # I/O delay
+    time.sleep(complexity / 200)
+
 {{#operations}}
     {{#operation}}
 
@@ -121,7 +132,14 @@ def {{operationId}}({{#allParams}}{{^isBodyParam}}{{paramName}}{{/isBodyParam}}{
     ###
     print("[IN] handle {{operationId}} with body:", body)
 
-    # outgoing calls (fail fast)
+    # COMPLEXITY SIMULATION (blocking)
+    complexity = {{vendorExtensions.x-complexity}}
+
+    # --- simulate service workload from 3k to 300k iterations ---
+    simulate_overhead(complexity)
+    print("Finished complexity simulation ({{vendorExtensions.x-complexity}}) for {{operationId}}")
+
+    # OUTGOING CALLS (fail fast)
     try:
         for call in outgoing_calls:
             call_outgoing(call["operationId"])

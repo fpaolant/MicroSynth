@@ -54,6 +54,7 @@ export type Endpoint = {
   method: HttpMethods;
   parameters: Parameter[];
   responses: ApiResponse[];
+  complexity: number;
   code: string;
 }
 

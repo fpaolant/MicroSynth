@@ -67,6 +67,7 @@ export class FormBuilderService {
       method: [e.method || defaultEndpoint().method, Validators.required],
       parameters: this.fb.array(e.parameters.map(p => this.parameter(p))),
       responses: this.apiResponseArray(e.responses),
+      complexity: [e.complexity || defaultEndpoint().complexity, [Validators.required, Validators.min(1), Validators.max(100)]],
       code: [e.code || defaultEndpoint().code]
     });
   }

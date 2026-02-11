@@ -12,6 +12,7 @@ public class DelegateOperationModel {
     private String httpMethod;
     private String methodSignature;
     private String logLine;
+    private int complexity;
     private List<DelegateParamModel> parameters;
     private DelegateBodyModel body;
     private List<OutgoingCallModel> outgoingCalls;

@@ -29,5 +29,6 @@ public class Endpoint implements Serializable {
     private List<Parameter> parameters = new ArrayList<>(); // parameters array
     private List<ApiResponse> responses = List.of(new ApiResponse(200, "Successful operation", "application/json", "{}"));
     private String code = "";
+    private Integer complexity = 0;
 
 }

@@ -111,6 +111,7 @@ export const defaultEndpoint = (): Endpoint => ({
   method: 'GET',
   parameters: [defaultParameter()],
   responses: [defaultApiResponse()],
+  complexity: 10,
   code: ''
 });
 
@@ -121,8 +122,8 @@ export const defaultNodePayload = (nodeName: string): NodePayload => {
     type: 'controller',
     basePath: '/api',
     description: '',
-    endpoints: [defaultEndpoint()],
-    initiator: false
+    initiator: false,
+    endpoints: [defaultEndpoint()]    
   }
 };
 
