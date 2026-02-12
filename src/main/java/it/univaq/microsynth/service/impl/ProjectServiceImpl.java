@@ -310,6 +310,9 @@ public class ProjectServiceImpl implements ProjectService {
 
         String[] methods = { "GET", "POST" };
 
+        // random integer between 1-30
+        Integer complexity = new Random().nextInt(30) + 1;
+
         // Create an endpoint
         Endpoint e1 = Endpoint.builder()
                 .path(path)
@@ -318,6 +321,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .responses(List.of(
                         new ApiResponse(200, "Successful response", "application/json","{}")
                 ))
+                .complexity(complexity)
                 .build();
 
         payload.setEndpoints(List.of(e1));
