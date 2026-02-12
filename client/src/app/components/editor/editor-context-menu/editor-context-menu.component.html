@@ -40,7 +40,11 @@
       [minFractionDigits]="1"
       [maxFractionDigits]="1"
       formControlName="weight"
-      class="w-full"
+      class="w-30"
+      pTooltip="Probability to be called 
+                from source node
+                value 0.1-1"
+      tooltipPosition="right" 
     />
     <label for="weight">Weight</label>
   </p-floatlabel>
@@ -317,8 +321,27 @@
         </div>
 
         <div class="mb-8 flex flex-col gap-4">
-          <div class="text-sm font-semibold flex flex-row justify-between mx-2"><span>Complexity</span> <span class="ml-4 text-surface-500">{{ endpoint.get('complexity')?.value }}</span></div>
-          <p-slider class="mx-2" formControlName="complexity" [min]="1" [max]="100" step="10" />
+          <div class="text-sm font-semibold flex flex-row justify-between mx-2">
+            <!-- Sinistra: label + icon -->
+              <div class="flex items-center gap-2">
+                <span>Complexity</span>
+                <i class="pi pi-info-circle text-xs text-surface-400 cursor-pointer hover:text-primary transition-colors"
+                  pTooltip="Makes dummy operation inside Endpoint.
+                            Example
+                            // I/O delay
+                            const delayMs = (COMPLEXITY / 200) * 1000; 
+                            await sleep(delayMs);
+                            "
+                  tooltipPosition="right"
+                ></i>
+              </div>
+            <span class="ml-4 text-surface-500">{{ endpoint.get('complexity')?.value }}</span>
+          </div>
+          <p-slider class="mx-2" formControlName="complexity" [min]="1" [max]="100" step="10" 
+            [ngStyle]="{
+              '--p-slider-range-background': getSliderColor(endpoint)
+            }"
+          />
         </div>
 
         <!-- PATH -->

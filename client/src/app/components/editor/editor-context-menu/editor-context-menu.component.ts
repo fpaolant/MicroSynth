@@ -389,4 +389,11 @@ export class EditorContextMenuComponent implements OnChanges {
 
   }
 
+  getSliderColor(ep: any): string {
+    const value = ep.controls.complexity.value;
+    if (value <= 30) return 'var(--p-primary-color)';
+    if (value <= 70) return 'var(--p-yellow-500)';
+    return 'var(--p-red-500)';
+  }
+
 }
