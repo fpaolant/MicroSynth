@@ -105,10 +105,10 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private _diagram!: DiagramData;
   @Input()
-  set diagram(value: DiagramData) {
-    this._diagram = value;
+  set diagram(value: { diagram: DiagramData; mode: "init" | "import" | "generate" }) {
+    this._diagram = value.diagram;
     if (this.editor) {
-      this.loadDiagram(false);
+      this.loadDiagram(true, value.mode);
     }
   }
 
@@ -451,6 +451,7 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
           }
 
           if (action === "generate") {
+            this.reorder();
             this.messageService.add({
               severity: "success",
               summary: "Graph generated successfully",
@@ -480,7 +481,6 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
       AreaExtensions.zoomAt(this.area, this.editor.getNodes());
     }
   }
-
 
   private addPresets(render: any) {
     const socketPositionWatcher = this.socketPositionWatcher;

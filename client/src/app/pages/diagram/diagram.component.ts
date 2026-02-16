@@ -65,10 +65,12 @@ export class DiagramPage implements OnInit, AfterViewInit {
   changeName:boolean = false;
   
   // drafts
-  diagramDataDraft: DiagramData = { nodes: [], connections: [] };
   nameDraft:string = '';
 
   showDrawer: boolean = false;
+
+
+  diagramData: {diagram: DiagramData, mode: "init" | "import" | "generate"};
   
 
 
@@ -77,6 +79,8 @@ export class DiagramPage implements OnInit, AfterViewInit {
       { icon: "pi pi-home", route: "/" },
       { label: "Projects", route: "/pages/projects" },
     ]);
+
+    this.diagramData = {diagram: { nodes: [], connections: [] }, mode: "init"};
   }
   
   ngOnInit(): void {
@@ -134,7 +138,7 @@ export class DiagramPage implements OnInit, AfterViewInit {
 
   loadDiagram() {
     if (!this.diagram?.data) return;
-    this.diagramDataDraft = this.diagram.data;
+    this.diagramData = {diagram: this.diagram.data, mode: 'init'};
   }
 
   addNode(name: string) {
@@ -169,8 +173,6 @@ export class DiagramPage implements OnInit, AfterViewInit {
       name: this.diagram?.name || "New Diagram",
       data: diagramData
     };
-
-    console.log("Saving diagram", this.diagram);
 
     /*
       Save diagram to endpoint
@@ -284,7 +286,9 @@ export class DiagramPage implements OnInit, AfterViewInit {
   onGenerate($event: any) {
     this.diagramService.generateDiagram($event).subscribe({
       next: (res) => {
-        if(res.data) this.diagramDataDraft = res.data;
+        if(res.data) {
+          this.diagramData = {diagram: res.data, mode: "generate"}
+        }
         this.messageService.add({
           severity: "success",
           summary: "Success",
