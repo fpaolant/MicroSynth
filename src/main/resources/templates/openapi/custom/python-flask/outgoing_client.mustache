@@ -53,11 +53,11 @@ def call_outgoing(operation_id):
     for p in params:
         value = p["value"]
 
-        # normalize boolean
-        if isinstance(value, bool):
-            value = "true" if value else "false"
-
         if method in ("GET", "HEAD"):
+            if isinstance(value, bool):
+                value = str(value).lower()
+            else:
+                value = str(value)
             query_params[p["name"]] = value
         else:
             body_params[p["name"]] = value
