@@ -46,7 +46,7 @@
         </div>
   
         <!-- Density -->
-        <div class="items-center gap-4" class="mb-8">
+        <div class="items-center gap-4" class="mb-4">
           <label for="density" class="font-semibold mb-2 mr-2">Density</label>
           <small class="p-text-secondary text-gray-400">(Probability of connection between a couple of nodes)</small>
           <input pInputText id="density" type="number" class="w-full mt-2 mb-8" [disabled]="true" [value]="generateGraphForm.get('density')?.value" readonly autocomplete="off" step="0.10" min="0" max="1" />
@@ -60,6 +60,26 @@
           <p-message *ngIf="generateGraphForm.get('density')?.errors?.['max']" severity="error" variant="simple" class="w-full" size="small">
             Maximum density is 1.0
           </p-message>
+        </div>
+
+        <!-- probability sum -->
+        <div class="items-center gap-4">
+          <p-checkbox id="outgoingProbabiltySum" binary="true" formControlName="outgoingProbabiltySum" />
+          <label for="outgoingProbabiltySum" class="ml-2">Sum of outgoing connection probability must be =1</label>
+        </div>
+
+        <!-- languages -->
+        <div class="font-semibold">Node languages to generate</div>
+        <div class="flex flex-col items-center md:flex-row gap-4">
+          <div class="flex items-center" *ngFor="let language of languageList">
+              <p-checkbox 
+                name="group"
+                [value]="language"
+                formControlName="languages" />
+              <label class="ml-2">{{language}}</label>
+          </div>
+          <p-message severity="error" variant="simple" size="small"
+          *ngIf="submitted && generateGraphForm.get('languages')?.invalid">Select at least one option</p-message>
         </div>
     </form>
   

@@ -77,7 +77,6 @@ public class DiagramController {
     })
     @PostMapping("/generate")
     public ResponseEntity<?> generate(@RequestBody @Valid DiagramGenerationRequestDTO params) {
-
         try {
             Diagram diagram = projectService.generate(params);
             return ResponseEntity.ok(diagram);
@@ -87,7 +86,6 @@ public class DiagramController {
             log.error("Error generating diagram: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
-
     }
 
 }

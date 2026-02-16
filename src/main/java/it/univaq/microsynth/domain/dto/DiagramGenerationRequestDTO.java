@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.Set;
+
 
 /**
  * DTO to represent a generate diagram request
@@ -30,4 +32,8 @@ public class DiagramGenerationRequestDTO {
     @DecimalMin(value = "0.0", inclusive = true, message = "Density must be >= 0.0")
     @DecimalMax(value = "1.0", inclusive = true, message = "Density must be <= 1.0")
     private double density;
+
+    private Set<String> languages;
+
+    private Boolean outgoingProbabiltySum;
 }

@@ -172,7 +172,8 @@ public class ProjectServiceImpl implements ProjectService {
      * {@inheritDoc}
      */
     @Override
-    public Diagram generate(DiagramGenerationRequestDTO params) throws IllegalArgumentException {
+    public Diagram generate(DiagramGenerationRequestDTO params) {
+
         int n = params.getNodes();
         int r = params.getRoots();
         double d = params.getDensity();
@@ -181,32 +182,38 @@ public class ProjectServiceImpl implements ProjectService {
             throw new IllegalArgumentException("Number of roots cannot be greater than number of nodes.");
         }
 
-        List<Node> nodes = new ArrayList<>();
-        List<Connection> connections = new ArrayList<>();
         Random rand = new Random();
 
-        // 1. Create nodes with UUIDs as IDs
+        List<Node> nodes = new ArrayList<>();
+        List<Connection> connections = new ArrayList<>();
         List<String> nodeIds = new ArrayList<>();
+
+        // Nodes creation
         for (int i = 0; i < n; i++) {
             String id = UUID.randomUUID().toString();
             nodeIds.add(id);
+
             nodes.add(new Node(
                     id,
                     "S " + (i + 1),
                     "circle",
                     new Position(0.0, 0.0),
-                    this.generateRandomNodePayload("s-" + (i + 1), "/path-" + (i + 1)),
+                    generateRandomNodePayload(
+                            "s-" + (i + 1),
+                            "/path-" + (i + 1),
+                            params.getLanguages()
+                    ),
                     0.0
             ));
         }
 
-        // 2. Select roots (by index)
+        // Root choice
         Set<Integer> rootIndices = new HashSet<>();
         while (rootIndices.size() < r) {
             rootIndices.add(rand.nextInt(n));
         }
 
-        // 3. Generate all possible edges where from < to (to ensure acyclicity)
+        // Generate possible acycle edges
         List<int[]> possibleEdges = new ArrayList<>();
         for (int from = 0; from < n - 1; from++) {
             for (int to = from + 1; to < n; to++) {
@@ -216,78 +223,116 @@ public class ProjectServiceImpl implements ProjectService {
             }
         }
 
-        // 4. Shuffle and add edges up to the target density
         int maxConnections = possibleEdges.size();
         int targetConnections = (int) Math.round(d * maxConnections);
 
         Collections.shuffle(possibleEdges, rand);
-        Set<String> existingEdges = new HashSet<>();
 
-        Map<String, Double> weightSums = new HashMap<>();
-        Node targetNode;
-        for (int i = 0; i < Math.min(targetConnections, maxConnections); i++) {
-            int[] edge = possibleEdges.get(i);
-            int from = edge[0];
-            int to = edge[1];
+        List<int[]> selectedEdges = possibleEdges.subList(
+                0,
+                Math.min(targetConnections, maxConnections)
+        );
 
-            String sourceId = nodeIds.get(from);
-            String targetId = nodeIds.get(to);
+        // Group edges per source node
+        Map<String, List<int[]>> edgesBySource = new HashMap<>();
 
-            String edgeKey = from + "->" + to;
+        for (int[] edge : selectedEdges) {
+            String sourceId = nodeIds.get(edge[0]);
+            edgesBySource
+                    .computeIfAbsent(sourceId, k -> new ArrayList<>())
+                    .add(edge);
+        }
 
-            if (!existingEdges.contains(edgeKey)) {
-                // sourceId wheight sum
-                double currentSum = weightSums.getOrDefault(sourceId, 0.0);
-                double maxAllowed = 1.0 - currentSum;
+        // Generate connections with weight
+        for (Map.Entry<String, List<int[]>> entry : edgesBySource.entrySet()) {
+
+            String sourceId = entry.getKey();
+            List<int[]> sourceEdges = entry.getValue();
+
+            double remaining = 1.0;
+
+            for (int i = 0; i < sourceEdges.size(); i++) {
+                int[] edge = sourceEdges.get(i);
+                String targetId = nodeIds.get(edge[1]);
                 double weight;
-                // Se non c'è abbastanza spazio per il peso minimo, salta questa connection
-                if (maxAllowed < 0.1) {
-                    weight = 0.0;
+
+                // if weight sum of probability of outgoing connections must be =1
+                if (Boolean.TRUE.equals(params.getOutgoingProbabiltySum())) {
+                    int edgesLeft = sourceEdges.size() - i;
+                    if (edgesLeft == 1) {
+                        // last connection takes the remaining weigth available
+                        weight = remaining;
+                    } else {
+                        // Minimum 0.1 for remaining connection
+                        double max = remaining - (0.1 * (edgesLeft - 1));
+                        weight = 0.1 + rand.nextDouble() * (max - 0.1);
+                    }
+                    weight = Math.round(weight * 100.0) / 100.0;
+                    remaining -= weight;
+                    // Final correction to avoiding floating point
+                    if (edgesLeft == 1) {
+                        weight += remaining;
+                        weight = Math.round(weight * 100.0) / 100.0;
+                    }
                 } else {
-                    // random between 0.1 and maxAllowed
-                    weight = 0.1 + rand.nextDouble() * (maxAllowed - 0.1);
+                    weight = 0.1 + rand.nextDouble() * 0.9;
+                    weight = Math.round(weight * 100.0) / 100.0;
                 }
 
-                existingEdges.add(edgeKey);
-                targetNode = nodes.stream().filter(n1 -> n1.getId().equals(targetId)).findFirst().orElse(null);
+                Node targetNode = nodes.stream()
+                        .filter(n1 -> n1.getId().equals(targetId))
+                        .findFirst()
+                        .orElse(null);
+
+                if (targetNode == null) continue;
 
                 ConnectionPayload payload = generateRandomConnectionPayload(targetNode);
                 targetNode.getPayload().setInitiator(false);
-                String action = payload.getApiCall().getMethod() + "_" + payload.getApiCall().getPath().replaceAll("/", "");
+
+                String action = payload.getApiCall().getMethod() + "_" +
+                        payload.getApiCall().getPath().replaceAll("/", "");
+
                 connections.add(new Connection(
                         UUID.randomUUID().toString(),
                         sourceId,
                         targetId,
                         false,
-                        (int)(weight * 100) / 100.0, // 2 decimal
+                        weight,
                         action,
                         payload
                 ));
             }
         }
 
-        // 5. Build diagram
+        // Build diagram
         Diagram diagram = new Diagram();
         diagram.setId(UUID.randomUUID().toString());
         diagram.setName("Generated System");
-        diagram.setData(new DiagramData(nodes, connections, new Viewport(0.0, 0.0, 1.0)));
-
+        diagram.setData(new DiagramData(
+                nodes,
+                connections,
+                new Viewport(0.0, 0.0, 1.0)
+        ));
         return diagram;
     }
-
     /**
      * Helper method to generate random NodePayload based on the node name and path.
      * This method creates a payload with random language, endpoints, and parameters.
      * @param nodeName The name of the node for which to generate the payload.
      * @param path The path to be used in the generated endpoint.
+     * @param languages language request to generate
      * @return A NodePayload object with randomly generated content based on the provided node name and path.
      */
-    private NodePayload generateRandomNodePayload(String nodeName, String path) {
+    private NodePayload generateRandomNodePayload(String nodeName, String path, Set<String> languages) throws IllegalArgumentException {
         NodePayload payload = new NodePayload();
         Random rand = new Random();
 
-        String[] languages = {"java", "python", "javascript"};
-        String chosenLanguage = languages[rand.nextInt(languages.length)];
+        if (languages == null || languages.isEmpty()) {
+            throw new IllegalArgumentException("Languages to generate cannot be null or empty");
+        }
+
+        List<String> languageList = new ArrayList<>(languages);
+        String chosenLanguage = languageList.get(rand.nextInt(languageList.size()));
 
         payload.setLanguage(chosenLanguage);
         payload.setBasePath("/api");

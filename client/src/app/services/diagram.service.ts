@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { BaseDocument } from './model/response.document';
-import { ConnectionPayload, NodePayload, Position } from '../components/editor/types';
+import { ConnectionPayload, Language, NodePayload, Position } from '../components/editor/types';
 
 
 
@@ -50,6 +50,8 @@ interface GenerateDiagramParams {
   nodes: number; // Number of nodes (must be >= 1)
   roots: number; // Number of roots (must be >= 0)
   density: number; // Density (must be between 0.0 and 1.0 inclusive)
+  languages: Language[];
+  outgoingProbabiltySum: boolean;
 }
 
 
