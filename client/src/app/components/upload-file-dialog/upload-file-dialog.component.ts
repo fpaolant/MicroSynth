@@ -58,6 +58,11 @@ export class UploadFileDialogComponent {
       reader.onerror = () => {};
 
       reader.readAsText(file);
+
+      reader.onloadend = () => {
+        console.log("file read", file.name);
+      }
+      
     }
   }
 
@@ -65,6 +70,7 @@ export class UploadFileDialogComponent {
     this.visible = false;
     this.visibleChange.emit(false);
     this.onCancel.emit();
+    this.fileUpload.clear();
   }
 
   
