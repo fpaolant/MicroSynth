@@ -707,9 +707,12 @@ export class EditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onFileParsed(fileData: { name: string; content: string }) {
     try {
-      this.diagram = JSON.parse(fileData.content);
+      const objData =  JSON.parse(fileData.content);
+      this._diagram = objData;
+     
       this.loadDiagram(true, "import");
     } catch (e) {
+      console.error("File not imported", e)
       this.messageService.add({
         severity: "error",
         summary: "File not valid",
